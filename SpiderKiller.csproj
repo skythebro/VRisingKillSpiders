@@ -20,11 +20,18 @@
     </ItemGroup>
     <ItemGroup>
       <Compile Remove="obj\**" />
+      <Compile Include="obj\Debug\net6.0\.NETCoreApp,Version=v6.0.AssemblyAttributes.cs" />
     </ItemGroup>
     <ItemGroup>
       <EmbeddedResource Remove="obj\**" />
     </ItemGroup>
     <ItemGroup>
       <None Remove="obj\**" />
+    </ItemGroup>
+    <ItemGroup>
+      <Content Include="obj\project.assets.json" />
+      <Content Include="obj\project.nuget.cache" />
+      <Content Include="obj\project.packagespec.json" />
+      <Content Include="obj\rider.project.restore.info" />
     </ItemGroup>
 </Project>
