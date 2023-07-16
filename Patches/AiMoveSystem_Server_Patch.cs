@@ -62,7 +62,7 @@ public class AiMoveSystem_Server_Patch
             }
             
             
-            
+            /*
             _log.LogInfo($"MaxActiveCritterSpawns before: {GlobalCritterSpawnManager.MaxActiveCritterSpawns}");
             GlobalCritterSpawnManager.MaxActiveCritterSpawns = 0;
             _log.LogInfo($"MaxActiveCritterSpawns after: {GlobalCritterSpawnManager.MaxActiveCritterSpawns}");
@@ -82,6 +82,7 @@ public class AiMoveSystem_Server_Patch
                     _log.LogInfo($"cg.BaseCritterGuid: {cg.BaseCritterGuid}");
                 });
             }
+            */
         }
         catch (Exception e)
         {

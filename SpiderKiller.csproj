@@ -19,14 +19,8 @@
         <PackageReference Include="VRising.VampireCommandFramework" Version="0.8.0" />
     </ItemGroup>
     <ItemGroup>
-      <Compile Remove="obj\**" />
       <Compile Include="obj\Debug\net6.0\.NETCoreApp,Version=v6.0.AssemblyAttributes.cs" />
-    </ItemGroup>
-    <ItemGroup>
-      <EmbeddedResource Remove="obj\**" />
-    </ItemGroup>
-    <ItemGroup>
-      <None Remove="obj\**" />
+      <Compile Include="obj\Debug\net6.0\MyPluginInfo.cs" />
     </ItemGroup>
     <ItemGroup>
       <Content Include="obj\project.assets.json" />
