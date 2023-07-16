@@ -63,7 +63,7 @@ silkwormGiveAmount = 1
 - Check your BepInEx logs on the server to make sure the latest version of both KillSpiders and Bloodstone were loaded (optionally VampireCommandFramework too).
 
 ### Support
-- Open an issue on [github](https://github.com/skythebro/KillSpidersVRising/issues)
+- Open an issue on [github](https://github.com/skythebro/VRisingKillSpiders/issues)
 - Ask in the V Rising Mod Community [discord](https://vrisingmods.com/discord)
 
 ### Contributors
