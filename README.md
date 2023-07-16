@@ -1,6 +1,4 @@
-# KillSpiders
-
-KillSpiders 
+# KillSpiders 
 
 ## Instalation (Manual)
 
