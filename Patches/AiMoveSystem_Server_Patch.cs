@@ -22,6 +22,10 @@ public class AiMoveSystem_Server_Patch
 
     private static int _totalcullamount;
 
+    private static Entity _queenEntity = Entity.Null;
+
+    private static PrefabGUID _spiderQueen = new(-548489519);
+
     public static void Prefix(AiMoveSystem_Server __instance)
     {
         try
@@ -38,51 +42,38 @@ public class AiMoveSystem_Server_Patch
 
             var emp = __instance.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<PlayerCharacter>())
                 .ToEntityArray(Allocator.Temp);
+
             foreach (var player in emp)
             {
                 var spiders = SpiderUtil.ClosestSpiders(player, Settings.CULL_RANGE.Value);
                 var count = spiders.Count;
                 var remaining = count;
-                foreach (var spider in spiders.TakeWhile(s => remaining != 0))
+
+                foreach (var spider in spiders.TakeWhile(_ => remaining != 0))
                 {
-                    spider.WithComponentDataC((ref Health t) =>
-                    {
-                        t.Value = -10000;
-                        t.TimeOfDeath = Time.time;
-                        t.IsDead = true;
-                    });
-                    //StatChangeUtility.KillEntity(__instance.EntityManager, spider, player, Time.time); 
                     remaining--;
+                    if (IsQueenSpider(spider))
+                    {
+                        if (_queenEntity != Entity.Null)
+                        {
+                            if (Settings.CULL_QUEEN.Value)
+                            {
+                                KillSpider(spider, player);
+                            }
+                            continue;
+                        }
+                        HandleQueenSpider(spider);
+                        continue;
+                    }
+                    KillSpider(spider, player);
                 }
 
-                if (count <= 0) continue;
-                _log.LogDebug($"Killed {count} spiders.");
                 if (!Settings.ENABLE_EXTRA_CULL_REWARD.Value) continue;
-                GiveExtraCullReward(count, player);
+                AddCullAmount(count);
+                GiveExtraCullReward(player);
             }
-            
-            
-            /*
-            _log.LogInfo($"MaxActiveCritterSpawns before: {GlobalCritterSpawnManager.MaxActiveCritterSpawns}");
-            GlobalCritterSpawnManager.MaxActiveCritterSpawns = 0;
-            _log.LogInfo($"MaxActiveCritterSpawns after: {GlobalCritterSpawnManager.MaxActiveCritterSpawns}");
-            var em = __instance.EntityManager;
-            
-            
-            var critters = em.CreateEntityQuery(ComponentType.ReadOnly<Critter>())
-                .ToEntityArray(Allocator.Temp);
-            if (critters.Length == 0) return;
-            foreach (var critter in critters)
-            {
-                _log.LogInfo($"CritterGroup:");
-                critter.WithComponentData((ref CritterGroup cg) =>
-                {
-                    _log.LogInfo($"cg.NumCritters: {cg.NumCritters}");
-                    _log.LogInfo($"cg.State: {cg.State}");
-                    _log.LogInfo($"cg.BaseCritterGuid: {cg.BaseCritterGuid}");
-                });
-            }
-            */
+
+            CheckForCritters(__instance);
         }
         catch (Exception e)
         {
@@ -90,45 +81,38 @@ public class AiMoveSystem_Server_Patch
         }
     }
 
-    private struct CullReward
+    private static bool IsQueenSpider(Entity spider)
     {
-        public int Threshold;
-        public int DropAmount;
+        return spider.ComparePrefabGuidString(_spiderQueen);
     }
 
-    private static readonly CullReward[] CullRewards =
+    private static void HandleQueenSpider(Entity spider)
     {
-        new()
-        {
-            Threshold = Settings.EXTRA_CULL_REWARD_THRESHOLD.Value, DropAmount = Settings.SILKWORM_GIVE_AMOUNT.Value
-        },
-        new()
-        {
-            Threshold = Settings.EXTRA_CULL_REWARD_THRESHOLD.Value * 2,
-            DropAmount = Settings.SILKWORM_GIVE_AMOUNT.Value * 2
-        },
-        new()
-        {
-            Threshold = Settings.EXTRA_CULL_REWARD_THRESHOLD.Value * 4,
-            DropAmount = Settings.SILKWORM_GIVE_AMOUNT.Value * 4
-        },
-        new()
-        {
-            Threshold = Settings.EXTRA_CULL_REWARD_THRESHOLD.Value * 8,
-            DropAmount = Settings.SILKWORM_GIVE_AMOUNT.Value * 8
-        },
-        new()
-        {
-            Threshold = Settings.EXTRA_CULL_REWARD_THRESHOLD.Value * 16,
-            DropAmount = Settings.SILKWORM_GIVE_AMOUNT.Value * 16
-        },
-        new()
-        {
-            Threshold = Settings.EXTRA_CULL_REWARD_THRESHOLD.Value * 32,
-            DropAmount = Settings.SILKWORM_GIVE_AMOUNT.Value * 32
-        }
-    };
+        _queenEntity = spider;
+        _log.LogInfo("Found queen!");
+    }
 
+    private static void KillSpider(Entity spider, Entity player)
+    {
+        var deathEvent = new DeathEvent
+        {
+            Died = spider,
+            Killer = player,
+            Source = player
+        };
+        var dead = new Dead
+        {
+            ServerTimeOfDeath = Time.time,
+            DestroyAfterDuration = 5f,
+            Killer = player,
+            KillerSource = player,
+            DoNotDestroy = false
+        };
+        DeathUtilities.Kill(VWorld.Server.EntityManager, spider,dead,deathEvent);
+        // Destroys the entity without giving any drops 
+        // DestroyUtility.CreateDestroyEvent(VWorld.Server.EntityManager, spider, DestroyReason.Default, DestroyDebugReason.None);
+    }
+    
     private static void AddCullAmount(int amount)
     {
         _totalcullamount += amount;
@@ -144,16 +128,55 @@ public class AiMoveSystem_Server_Patch
         _totalcullamount = 0;
     }
 
-    private static void GiveExtraCullReward(int count, Entity player)
+    private static void CheckForCritters(ComponentSystemBase instance)
     {
-        var silkworm = new PrefabGUID(-11246506);
-        AddCullAmount(count);
-        var currentCullAmount = GetCullAmount();
-
-        foreach (var reward in CullRewards)
+        var singleSpiderGroupGuid = new PrefabGUID(-80668474);
+        var spiderGroupGuid = new PrefabGUID(1076806641);
+        var em = instance.EntityManager;
+        // ReSharper disable once IdentifierTypo
+        var crittergroups = em.CreateEntityQuery(ComponentType.ReadOnly<CritterGroup>())
+            .ToEntityArray(Allocator.Temp);
+        if (crittergroups.Length == 0) return;
+        _log.LogInfo($"Checking for critters: {crittergroups.Length}");
+        // ReSharper disable once IdentifierTypo
+        foreach (var crittergroup in crittergroups)
         {
-            if (currentCullAmount <= reward.Threshold) continue;
-            GiveDrop.AddItemToInventory(player, silkworm, reward.DropAmount);
+            _log.LogInfo($"CritterGroup:");
+            var isSingleSpiderGroup = crittergroup.ComparePrefabGuidString(singleSpiderGroupGuid);
+            var isSpiderGroup = crittergroup.ComparePrefabGuidString(spiderGroupGuid);
+            if (isSingleSpiderGroup || isSpiderGroup)
+            {
+                crittergroup.WithComponentDataC((ref CritterGroup t) =>
+                {
+                    t.SpawnZoneRadius = 0;
+                    t.NumCritters = 0;
+                    t.MaxAliveTime = 0.1f;
+                });
+            }
+        }
+    }
+
+    private static void GiveExtraCullReward(Entity player)
+    {
+        var threshold = Settings.EXTRA_CULL_REWARD_THRESHOLD.Value;
+        var dropAmount = Settings.SILKWORM_GIVE_AMOUNT.Value;
+        var silkworm = new PrefabGUID(-11246506);
+
+        var currentCullAmount = GetCullAmount();
+        var i = 0;
+        while (true)
+        {
+            if (i == 0)
+            {
+                i++;
+            }
+            else
+            {
+                i *= 2;
+            }
+
+            if (currentCullAmount >= threshold * i) continue;
+            GiveDrop.AddItemToInventory(player, silkworm, dropAmount * i);
             ResetCullAmount();
             break;
         }

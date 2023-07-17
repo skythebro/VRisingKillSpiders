@@ -23,7 +23,7 @@ internal static class SpiderUtil
         return spiderQuery.ToEntityArray(Allocator.Temp);
     }
 
-    internal static List<Entity> ClosestSpiders(Entity e, float radius = 10f,int team = 20)
+    internal static List<Entity> ClosestSpiders(Entity e, float radius,int team = 20)
     {
         var spiders = GetSpiders();
         var results = new List<Entity>();
@@ -34,7 +34,7 @@ internal static class SpiderUtil
             var position = VWorld.Server.EntityManager.GetComponentData<LocalToWorld>(spider).Position;
             var distance = UnityEngine.Vector3.Distance(origin, position); // wait really?
             var em = VWorld.Server.EntityManager;
-            ComponentDataFromEntity<Team> getTeam = em.GetComponentDataFromEntity<Team>();
+            var getTeam = em.GetComponentDataFromEntity<Team>();
             if (distance < radius && getTeam[spider].FactionIndex == team)
             {
                 results.Add(spider);
