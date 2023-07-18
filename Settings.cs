@@ -31,7 +31,7 @@ namespace SpiderKiller
 
 			ENABLE_CULLING = config.Bind<bool>("Server", "enableCulling", true, "Enable culling of spiders");
 			ENABLE_EXTRA_CULL_REWARD = config.Bind<bool>("Server", "enableExtraCullReward", false, "Enables the extra cull reward of silkworms");
-			CULL_QUEEN = config.Bind<bool>("Server", "enableQueenCull", false, "Enable culling of Ungora The Spider Queen VBlood boss");
+			CULL_QUEEN = config.Bind<bool>("Server", "enableQueenCull", false, "Enable culling of Ungora The Spider Queen VBlood boss (WIP will keep killing boss and keep dropping loot if you're in range)");
 			CULL_WAIT_TIME = config.Bind<double>("Server", "cullWaitTime", 0.5, "Time in seconds to wait before culling spiders again");
 			EXTRA_CULL_REWARD_THRESHOLD = config.Bind<int>("Server", "cullAmountThreshold", 5, "Amount of spiders to cull before rewarding extra silkworm(s)");
 			CULL_RANGE = config.Bind<float>("Server", "cullRange", 50f, "Range to check for spiders to cull (5=1tile)");

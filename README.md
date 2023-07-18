@@ -1,4 +1,5 @@
 # KillSpiders
+For a full list of changes check on my github page in the [releases](https://github.com/skythebro/VRisingKillSpiders/releases) section.
 
 ## Installation (Manual)
 
@@ -6,7 +7,7 @@
 * Install [Bloodstone](https://v-rising.thunderstore.io/package/deca/Bloodstone) into (VRising server folder)/BepInEx/plugins
 * (optional) Install [VampireCommandFramework](https://v-rising.thunderstore.io/package/deca/VampireCommandFramework/) into (VRising server folder)/BepInEx/plugins
 * (optional) Install [ServerLaunchFix](https://v-rising.thunderstore.io/package/Mythic/ServerLaunchFix/) into (VRising server folder)/BepInEx/plugins
-* Extract [KillSpiders.dll](https://github.com/skythebro/VRisingKillSpiders/releases) into (VRising server folder)/BepInEx/plugins
+* Extract [KillSpiders.dll](https://thunderstore.io/package/download/Skies/SpiderKiller/1.2.0/) into (VRising server folder)/BepInEx/plugins
 
 ## How to use
 
@@ -20,10 +21,11 @@ Features:
 - Stops tiny spider critters from spawning. (random event(hopefully))
 
 Optional admin commands (requires [VampireCommandFramework](https://v-rising.thunderstore.io/package/deca/VampireCommandFramework/)):
-- Use the `.sp(ider) k(ill) [range]` command to kill spiders manually if you don't want to let the mod run automatically.
-- Use the `.sp(ider) tp(teleport) [range]` command to teleport spiders to you. (if you would want that...)
-- Use the `.sp(ider) uu(unlockungora)` command to unlock all of VBlood rewards. (WIP need to restart server for it to take effect)
-- Use the `.sp(ider) kq(killqueen)` command to kill ungora this will drop loot but you wont be able to drink her blood. (May show red un-interactable shim if you are still tracking her(not sure if that's a game feature))
+- Use the `.sKillUtil k(ill) [range]` command to kill spiders manually if you don't want to let the mod run automatically.
+- Use the `.sKillUtil tp(teleportToMe) [range]` command to teleport spiders to you. (if you would want that...)
+- Use the `.sKillUtil uu(unlockungora)` command to unlock all of Ungora's VBlood rewards. (WIP need to restart server for it to take effect)
+- Use the `.sKillUtil kq(killqueen)` command to kill Ungora this will drop loot but you wont be able to drink her blood. (May show red un-interactable shim if you are still tracking her I think that's a game feature)
+- Use the `.sKillUtil iq(injurequeen)` command to bring Ungora to almost 0 health so 1 hit should kill her.
 
 ### Configuration
 The config will generate in _(VRising folder)/VRising_Server/BepInEx/config/KillSpiders.cfg_ after first boot of the server.
@@ -41,7 +43,7 @@ enableCulling = true
 # Default value: false
 enableExtraCullReward = false
 
-## Enable culling of Ungora The Spider Queen VBlood boss
+## Enable culling of Ungora The Spider Queen VBlood boss (WIP will keep killing boss and keep dropping loot if you're in range)
 # Setting type: Boolean
 # Default value: false
 enableQueenCull = false
@@ -68,7 +70,6 @@ silkwormGiveAmount = 1
 ```
 
 ### Troubleshooting
-
 - Make sure you install the mod on the server. If you are in a singleplayer world use [ServerLaunchFix](https://v-rising.thunderstore.io/package/Mythic/ServerLaunchFix/)
 - Check your BepInEx logs on the server to make sure the latest version of both KillSpiders and Bloodstone were loaded (optionally VampireCommandFramework too).
 

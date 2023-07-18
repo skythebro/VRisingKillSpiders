@@ -1,9 +1,12 @@
 using System.Collections.Generic;
+using System.Linq;
 using Bloodstone.API;
 using ProjectM;
+using SpiderKiller.extensions;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Transforms;
+using VampireCommandFramework;
 
 namespace SpiderKiller;
 
@@ -42,5 +45,25 @@ internal static class SpiderUtil
         }
 
         return results;
+    }
+    
+    internal static Entity Getqueen(ChatCommandContext ctx)
+    {
+        var spiderQueen = new PrefabGUID(-548489519);
+        var spiders = SpiderUtil.ClosestSpiders(ctx.Event.SenderCharacterEntity, Settings.CULL_RANGE.Value);
+        var count = spiders.Count;
+        var remaining = count;
+
+        foreach (var spider in spiders.TakeWhile(_ => remaining != 0))
+        {
+            var isQueen = spider.ComparePrefabGuidString(spiderQueen);
+            if (isQueen)
+            {
+                return spider;
+            }
+            
+            remaining--;
+        }
+        return Entity.Null;
     }
 }

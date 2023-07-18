@@ -3,7 +3,6 @@ using BepInEx.Logging;
 using Bloodstone.API;
 using ProjectM;
 using Unity.Entities;
-using UnityEngine;
 
 namespace SpiderKiller.extensions
 {

@@ -1,7 +1,6 @@
 ﻿using System.Linq;
 using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP;
-using ProjectM.UI;
 using SpiderKiller.extensions;
 using UnityEngine;
 
@@ -12,7 +11,6 @@ namespace SpiderKiller.VCFCompat
     using Unity.Transforms;
     using VampireCommandFramework;
     using Bloodstone.API;
-    using Unity.Mathematics;
 
     public static partial class Commands
     {
@@ -51,17 +49,37 @@ namespace SpiderKiller.VCFCompat
 
                 throw ctx.Error($"Could not find a spider within {Radius:F1}");
             }
-
-            [CommandGroup("spider", "sp")]
+            
+            [CommandGroup("sKillUtil", "sku")]
             public class SpiderCommands
             {
                 private static Entity _queenEntity = Entity.Null;
-                
+
                 private static bool _unlocked;
                 private static bool _unlockedThisOne;
                 private static bool _unlockedThisOtherOne;
+                private static int _unlockedCount = 0;
+
+                [Command("injurequeen", shortHand: "iq", adminOnly: true, description: "Almost kills Ungora", usage: "Usage: iq(injurequeen)")]
+                public void injureQueen(ChatCommandContext ctx)
+                {
+                    _queenEntity = SpiderUtil.Getqueen(ctx);
+                    if (_queenEntity == Entity.Null)
+                    {
+                        ctx.Reply("Queen not found");
+                        return;
+                    }
+
+                    _queenEntity.WithComponentDataC((ref Health h) =>
+                    {
+                        h.Value = 0.1f;
+                        h.MaxRecoveryHealth = 0.1f;
+                    });
+
+                    ctx.Reply("Injured the queen!");
+                }
                 
-                [Command("unlockungora", shortHand: "uu", adminOnly: true)]
+                [Command("unlockungora", shortHand: "uu", adminOnly: true, description: "Unlocks all Ungora unlocks", usage: "Usage: uu(unlockungora)")]
                 public void UnlockUngoraUnlocks(ChatCommandContext ctx)
                 {
                     if (_unlocked)
@@ -69,8 +87,9 @@ namespace SpiderKiller.VCFCompat
                         ctx.Reply("Already unlocked all Ungora unlocks");
                         return;
                     }
-                    
-                    var hasProgression = ProgressionUtility.TryGetProgressionEntity(VWorld.Server.EntityManager,ctx.Event.SenderUserEntity, out var progEntity);
+
+                    var hasProgression = ProgressionUtility.TryGetProgressionEntity(VWorld.Server.EntityManager,
+                        ctx.Event.SenderUserEntity, out var progEntity);
                     if (!hasProgression) return;
 
                     foreach (var unlockedVblood in VWorld.Server.EntityManager.GetBuffer<UnlockedVBlood>(progEntity))
@@ -78,6 +97,7 @@ namespace SpiderKiller.VCFCompat
                         if (new PrefabGUID(-548489519).Equals(unlockedVblood.VBlood))
                         {
                             _unlockedThisOne = true;
+                            _unlockedCount++;
                         }
                     }
 
@@ -89,19 +109,25 @@ namespace SpiderKiller.VCFCompat
                         };
                         VWorld.Server.EntityManager.GetBuffer<UnlockedVBlood>(progEntity).Add(unlockedVBlood);
                     }
-                    
-                    foreach (var uRecipeElement in VWorld.Server.EntityManager.GetBuffer<UnlockedRecipeElement>(progEntity))
+
+                    foreach (var uRecipeElement in VWorld.Server.EntityManager.GetBuffer<UnlockedRecipeElement>(
+                                 progEntity))
                     {
-                        if (new PrefabGUID(-1229432962).Equals(uRecipeElement.UnlockedRecipe) && uRecipeElement.UserHasRequiredContentFlags)
+                        if (new PrefabGUID(-1229432962).Equals(uRecipeElement.UnlockedRecipe) &&
+                            uRecipeElement.UserHasRequiredContentFlags)
                         {
                             _unlockedThisOne = true;
+                            _unlockedCount++;
                         }
 
-                        if (new PrefabGUID(-1294560299).Equals(uRecipeElement.UnlockedRecipe) && uRecipeElement.UserHasRequiredContentFlags)
+                        if (new PrefabGUID(1294560299).Equals(uRecipeElement.UnlockedRecipe) &&
+                            uRecipeElement.UserHasRequiredContentFlags)
                         {
                             _unlockedThisOtherOne = true;
+                            _unlockedCount++;
                         }
                     }
+
                     if (!_unlockedThisOne)
                     {
                         var unlockedRecipeElement = new UnlockedRecipeElement
@@ -109,8 +135,8 @@ namespace SpiderKiller.VCFCompat
                             UnlockedRecipe = new PrefabGUID(-1229432962),
                             UserHasRequiredContentFlags = true
                         };
-                        VWorld.Server.EntityManager.GetBuffer<UnlockedRecipeElement>(progEntity).Add(unlockedRecipeElement);
-                        
+                        VWorld.Server.EntityManager.GetBuffer<UnlockedRecipeElement>(progEntity)
+                            .Add(unlockedRecipeElement);
                     }
 
                     if (!_unlockedThisOtherOne)
@@ -120,14 +146,18 @@ namespace SpiderKiller.VCFCompat
                             UnlockedRecipe = new PrefabGUID(1294560299),
                             UserHasRequiredContentFlags = true
                         };
-                        VWorld.Server.EntityManager.GetBuffer<UnlockedRecipeElement>(progEntity).Add(unlockedRecipeElement2);
+                        VWorld.Server.EntityManager.GetBuffer<UnlockedRecipeElement>(progEntity)
+                            .Add(unlockedRecipeElement2);
                     }
                     
-                    foreach (var uAbilityElement in VWorld.Server.EntityManager.GetBuffer<UnlockedAbilityElement>(progEntity))
+                    foreach (var uAbilityElement in VWorld.Server.EntityManager.GetBuffer<UnlockedAbilityElement>(
+                                 progEntity))
                     {
-                        if (new PrefabGUID(69268894).Equals(uAbilityElement.Source) && new PrefabGUID(-266609153).Equals(uAbilityElement.UnlockedAbility))
+                        if (new PrefabGUID(69268894).Equals(uAbilityElement.Source) &&
+                            new PrefabGUID(-266609153).Equals(uAbilityElement.UnlockedAbility))
                         {
                             _unlockedThisOne = true;
+                            _unlockedCount++;
                         }
                     }
 
@@ -138,14 +168,17 @@ namespace SpiderKiller.VCFCompat
                             Source = new PrefabGUID(69268894),
                             UnlockedAbility = new PrefabGUID(-266609153)
                         };
-                        VWorld.Server.EntityManager.GetBuffer<UnlockedAbilityElement>(progEntity).Add(unlockedAbilityElement);
+                        VWorld.Server.EntityManager.GetBuffer<UnlockedAbilityElement>(progEntity)
+                            .Add(unlockedAbilityElement);
                     }
 
-                    foreach (var uProgressionElement in VWorld.Server.EntityManager.GetBuffer<UnlockedProgressionElement>(progEntity))
+                    foreach (var uProgressionElement in VWorld.Server.EntityManager
+                                 .GetBuffer<UnlockedProgressionElement>(progEntity))
                     {
                         if (new PrefabGUID(69268894).Equals(uProgressionElement.UnlockedPrefab))
                         {
                             _unlockedThisOne = true;
+                            _unlockedCount++;
                         }
                     }
 
@@ -154,92 +187,84 @@ namespace SpiderKiller.VCFCompat
                         var unlockedProgressionElement = new UnlockedProgressionElement
                         {
                             UnlockedPrefab = new PrefabGUID(69268894)
-                        
                         };
-                        VWorld.Server.EntityManager.GetBuffer<UnlockedProgressionElement>(progEntity).Add(unlockedProgressionElement);
+                        VWorld.Server.EntityManager.GetBuffer<UnlockedProgressionElement>(progEntity)
+                            .Add(unlockedProgressionElement);
+                    }
+
+                    if (_unlockedCount == 5)
+                    {
+                        ctx.Reply("Already unlocked all Ungora unlocks");
+                        _unlocked = true;
+                        return;
                     }
                     _unlocked = true;
                     ctx.Reply("Unlocked all Ungora unlocks");
                 }
 
-                [Command("killqueen", shortHand: "kq", adminOnly: true)]
+                [Command("killqueen", shortHand: "kq", adminOnly: true, description: "Kills Ungora but you won't be able to drink her blood", usage: "Usage: kq(killqueen)")]
                 public void SpiderQueenKill(ChatCommandContext ctx)
                 {
-                    var spiderQueen = new PrefabGUID(-548489519);
-                    var spiders = SpiderUtil.ClosestSpiders(ctx.Event.SenderCharacterEntity, Settings.CULL_RANGE.Value);
-                    var count = spiders.Count;
-                    var remaining = count;
-
-                    foreach (var spider in spiders.TakeWhile(_ => remaining != 0))
-                    {
-                        var isQueen = spider.ComparePrefabGuidString(spiderQueen);
-                        if (isQueen)
-                        {
-                            _queenEntity = spider;
-                            break;
-                        }
-
-                        remaining--;
-                    }
-
+                    _queenEntity = SpiderUtil.Getqueen(ctx);
                     if (_queenEntity == Entity.Null)
                     {
                         ctx.Reply("Queen not found");
                         return;
                     }
 
-                    StatChangeUtility.KillEntity(VWorld.Server.EntityManager, _queenEntity, ctx.Event.SenderCharacterEntity, Time.time, true);
+                    StatChangeUtility.KillEntity(VWorld.Server.EntityManager, _queenEntity,
+                        ctx.Event.SenderCharacterEntity, Time.time, true);
                     //DeathUtilities.Kill(VWorld.Server.EntityManager, _queenEntity, dead, deathEvent);
-                    var healthcomponent = VWorld.Server.EntityManager.GetComponentData<Health>(_queenEntity);
-                    _log.LogMessage(healthcomponent.IsDead ? "Queen is dead!" : "Queen isn't dead!");
                     ctx.Reply($"Killed the queen");
                 }
-            }
 
-            [Command("teleport", shortHand: "tp", adminOnly: true)]
-            public void TeleportToPlayer(ChatCommandContext ctx, float radius = 10f, int team = 20)
-            {
-                var spiders = SpiderUtil.ClosestSpiders(ctx.Event.SenderCharacterEntity, radius, team);
-                var count = spiders.Count;
-                float3 userPos = VWorld.Server.EntityManager
-                    .GetComponentData<Translation>(ctx.Event.SenderUserEntity).Value;
-                var remaining = count;
-                foreach (var spider in spiders.TakeWhile(_ => remaining != 0))
+                [Command("teleportToMe", shortHand: "tp", adminOnly: true, description: "Teleports all spiders(Entities with FactionIndex 20) to you in a defined range", usage: "Usage: tp(teleportToMe) [radius]")]
+                public void TeleportToPlayer(ChatCommandContext ctx, float radius = 10f, int factionIndex = 20)
                 {
-                    spider.WithComponentData((ref Translation t) => { t.Value = userPos; });
-                    remaining--;
+                    var spiders = SpiderUtil.ClosestSpiders(ctx.Event.SenderCharacterEntity, radius, factionIndex);
+                    var count = spiders.Count;
+                    var userPos = VWorld.Server.EntityManager
+                        .GetComponentData<Translation>(ctx.Event.SenderUserEntity).Value;
+                    var remaining = count;
+                    foreach (var spider in spiders.TakeWhile(_ => remaining != 0))
+                    {
+                        spider.WithComponentData((ref Translation t) => { t.Value = userPos; });
+                        remaining--;
+                    }
+
+                    ctx.Reply($"Teleported {count} spiders.");
                 }
 
-                ctx.Reply($"Teleported {count} spiders.");
-            }
-
-            [Command("kill", shortHand: "k", adminOnly: true)]
-            public void KillEnemy(ChatCommandContext ctx, float radius = 10f, int team = 20)
-            {
-                var spiders = SpiderUtil.ClosestSpiders(ctx.Event.SenderCharacterEntity, radius, team);
-                var count = spiders.Count;
-                var remaining = count;
-                foreach (var spider in spiders.TakeWhile(_ => remaining != 0))
+                [Command("kill", shortHand: "k", adminOnly: true, description: "Kills all spiders(Entities with FactionIndex 20) in a defined range", usage: "Usage: k(ill) [radius]")]
+                public void KillEnemy(ChatCommandContext ctx, float radius = 10f, int factionIndex = 20)
                 {
-                    var deathEvent = new DeathEvent
+                    var spiders = SpiderUtil.ClosestSpiders(ctx.Event.SenderCharacterEntity, radius, factionIndex);
+                    var count = spiders.Count;
+                    var remaining = count;
+                    foreach (var spider in spiders.TakeWhile(_ => remaining != 0))
                     {
-                        Died = spider,
-                        Killer = ctx.Event.SenderCharacterEntity,
-                        Source = ctx.Event.SenderCharacterEntity
-                    };
-                    var dead = new Dead
-                    {
-                        ServerTimeOfDeath = Time.time,
-                        DestroyAfterDuration = 5f,
-                        Killer = ctx.Event.SenderCharacterEntity,
-                        KillerSource = ctx.Event.SenderCharacterEntity,
-                        DoNotDestroy = false
-                    };
-                    DeathUtilities.Kill(VWorld.Server.EntityManager, spider, dead, deathEvent);
-                    remaining--;
+                        var deathEvent = new DeathEvent
+                        {
+                            Died = spider,
+                            Killer = ctx.Event.SenderCharacterEntity,
+                            Source = ctx.Event.SenderCharacterEntity
+                        };
+                        var dead = new Dead
+                        {
+                            ServerTimeOfDeath = Time.time,
+                            DestroyAfterDuration = 5f,
+                            Killer = ctx.Event.SenderCharacterEntity,
+                            KillerSource = ctx.Event.SenderCharacterEntity,
+                            DoNotDestroy = false
+                        };
+                        DeathUtilities.Kill(VWorld.Server.EntityManager, spider, dead, deathEvent);
+                        remaining--;
+                    }
+
+                    ctx.Reply($"Killed {count} spiders.");
                 }
 
-                ctx.Reply($"Killed {count} spiders.");
+                
             }
         }
     }
