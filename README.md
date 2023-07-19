@@ -11,16 +11,16 @@ For a full list of changes check on my github page in the [releases](https://git
 
 ## How to use
 * If you didn't change anything in the config the mod will work by killing all spiders in a 50 (10 tile) range every 0.5 seconds around all the players in the server.
-* It will also affect Ungora the spider queen within 2 tiles of the player it'll make her one hit and turns her aggro off.
+* It will also affect Ungora the spider queen within 2 tiles of the player it'll make her one hit and make her unable to see you.
 
 ## Updating
 * Make sure to check your config after running the updated mod to see if you need to make any changes!
 
 Features:
 - Kills spiders within a certain range of the player and drops their loot on the ground.
-- Optional config setting to add extra silkworm drops to inventory.
-- Optional config setting to auto down Ungora The Spider Queen. This will turn off her aggro and make her one hit.
+- Auto "downs" Ungora The Spider Queen. This will turn off her aggro and make her one hit.
 - Stops tiny spider critters from spawning. (random event(hopefully))
+- Optional config setting to add extra silkworm drops to inventory.
 
 Optional admin commands (requires [VampireCommandFramework](https://v-rising.thunderstore.io/package/deca/VampireCommandFramework/)):
 - Use the `.spik [range]` command to kill spiders manually if you don't want to let the mod run automatically.
