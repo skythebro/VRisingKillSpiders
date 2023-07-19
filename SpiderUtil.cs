@@ -47,10 +47,10 @@ internal static class SpiderUtil
         return results;
     }
     
-    internal static Entity Getqueen(ChatCommandContext ctx)
+    internal static Entity GetQueen(ChatCommandContext ctx)
     {
         var spiderQueen = new PrefabGUID(-548489519);
-        var spiders = SpiderUtil.ClosestSpiders(ctx.Event.SenderCharacterEntity, Settings.CULL_RANGE.Value);
+        var spiders = ClosestSpiders(ctx.Event.SenderCharacterEntity, Settings.CULL_RANGE.Value);
         var count = spiders.Count;
         var remaining = count;
 
@@ -65,5 +65,43 @@ internal static class SpiderUtil
             remaining--;
         }
         return Entity.Null;
+    }
+    
+    internal static Entity GetQueen(Entity player, float range)
+    {
+        var spiderQueen = new PrefabGUID(-548489519);
+        var spiders = ClosestSpiders(player, range);
+        var count = spiders.Count;
+        var remaining = count;
+
+        foreach (var spider in spiders.TakeWhile(_ => remaining != 0))
+        {
+            var isQueen = spider.ComparePrefabGuidString(spiderQueen);
+            if (isQueen)
+            {
+                return spider;
+            }
+            
+            remaining--;
+        }
+        return Entity.Null;
+    }
+    
+    internal static bool DownQueen(Entity queen)
+    {
+        if (queen == Entity.Null)
+        {
+            return false;
+        }
+
+        queen.WithComponentDataC((ref Health h) =>
+        {
+            h.Value = 0.00001f;
+            h.MaxRecoveryHealth = 0.00001f;
+            h.MaxHealth.Value = 0.00001f;
+        });
+
+        queen.WithComponentDataC((ref AggroConsumer ac) => { ac.Active._Value = false; });
+        return true;
     }
 }

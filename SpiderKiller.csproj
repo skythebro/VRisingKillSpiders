@@ -3,12 +3,12 @@
         <TargetFramework>net6.0</TargetFramework>
         <AssemblyName>SpiderKiller</AssemblyName>
         <Description>Mod that kills spiders in a range around you and your friends. So you don't have to fight those pesky things</Description>
-        <Version>1.0.0</Version>
+        <Version>1.3.0</Version>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <LangVersion>latest</LangVersion>
-        <AssemblyVersion>1.0.0.0</AssemblyVersion>
-        <FileVersion>1.0.0.0</FileVersion>
-        <InformationalVersion>1.0.0+2.Branch.main.Sha.62bb8fcf39ee2ebe62410e48ec8f8fdc72e85b10</InformationalVersion>
+        <AssemblyVersion>1.3.0.0</AssemblyVersion>
+        <FileVersion>1.3.0.0</FileVersion>
+        <InformationalVersion>1.3.0+2.Branch.main.Sha.62bb8fcf39ee2ebe62410e48ec8f8fdc72e85b10</InformationalVersion>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="BepInEx.Unity.IL2CPP" Version="6.0.0-be.668" IncludeAssets="compile" />
@@ -18,4 +18,7 @@
         <PackageReference Include="VRising.Unhollowed.Client" Version="0.6.5.*" />
         <PackageReference Include="VRising.VampireCommandFramework" Version="0.8.0" />
     </ItemGroup>
+    <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+        <Exec Command='copy "C:\Users\bryan\OneDrive - Karel de Grote Hogeschool\programmeren 2\.net\Projects\SpiderKiller\bin\Debug\net6.0\SpiderKiller.dll" "G:\SteamLibrary\steamapps\common\VRising\BepInEx\plugins"' />
+    </Target>
 </Project>

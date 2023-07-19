@@ -26,6 +26,10 @@ public class AiMoveSystem_Server_Patch
 
     private static PrefabGUID _spiderQueen = new(-548489519);
 
+    private static bool _queenDowned;
+
+    private static float lastDownedTime = 0f;
+
     public static void Prefix(AiMoveSystem_Server __instance)
     {
         try
@@ -45,6 +49,22 @@ public class AiMoveSystem_Server_Patch
 
             foreach (var player in emp)
             {
+                if (Settings.CULL_QUEEN.Value)
+                {
+                    if (!_queenDowned || Time.time - lastDownedTime >= 10f * 60f)
+                    {
+                        _queenEntity = SpiderUtil.GetQueen(player, 10f);
+                        if (_queenEntity != Entity.Null)
+                        {
+                            SpiderUtil.DownQueen(_queenEntity);
+                            _log.LogInfo("Queen downed");
+                            _queenDowned = true;
+                            lastDownedTime = Time.time;
+                            _queenEntity = Entity.Null;
+                        }
+                    }
+                }
+
                 var spiders = SpiderUtil.ClosestSpiders(player, Settings.CULL_RANGE.Value);
                 var count = spiders.Count;
                 var remaining = count;
@@ -54,17 +74,9 @@ public class AiMoveSystem_Server_Patch
                     remaining--;
                     if (IsQueenSpider(spider))
                     {
-                        if (_queenEntity != Entity.Null)
-                        {
-                            if (Settings.CULL_QUEEN.Value)
-                            {
-                                KillSpider(spider, player);
-                            }
-                            continue;
-                        }
-                        HandleQueenSpider(spider);
                         continue;
                     }
+
                     KillSpider(spider, player);
                 }
 
@@ -86,12 +98,6 @@ public class AiMoveSystem_Server_Patch
         return spider.ComparePrefabGuidString(_spiderQueen);
     }
 
-    private static void HandleQueenSpider(Entity spider)
-    {
-        _queenEntity = spider;
-        _log.LogInfo("Found queen!");
-    }
-
     private static void KillSpider(Entity spider, Entity player)
     {
         var deathEvent = new DeathEvent
@@ -108,11 +114,11 @@ public class AiMoveSystem_Server_Patch
             KillerSource = player,
             DoNotDestroy = false
         };
-        DeathUtilities.Kill(VWorld.Server.EntityManager, spider,dead,deathEvent);
+        DeathUtilities.Kill(VWorld.Server.EntityManager, spider, dead, deathEvent);
         // Destroys the entity without giving any drops 
         // DestroyUtility.CreateDestroyEvent(VWorld.Server.EntityManager, spider, DestroyReason.Default, DestroyDebugReason.None);
     }
-    
+
     private static void AddCullAmount(int amount)
     {
         _totalcullamount += amount;
