@@ -77,6 +77,9 @@ silkwormGiveAmount = 1
 - Open an issue on [github](https://github.com/skythebro/VRisingKillSpiders/issues)
 - Ask in the V Rising Mod Community [discord](https://vrisingmods.com/discord)
 
+### Support me!
+I have a patreon now so please support me [Here](patreon.com/user?u=97347013) so I can mod as much as I can!
+
 ### Contributors
 - skythebro/skyKDG: `@realskye` on Discord
 - V Rising Mod Community discord for helpful resources to mod this game and code inspiration.
