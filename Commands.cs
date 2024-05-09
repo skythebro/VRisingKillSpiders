@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP;
+using Stunlock.Core;
 using UnityEngine;
 
 namespace SpiderKiller.VCFCompat
@@ -35,11 +36,10 @@ namespace SpiderKiller.VCFCompat
             {
                 var spiders = SpiderUtil.ClosestSpiders(ctx.Event.SenderCharacterEntity, Radius);
                 var em = VWorld.Server.EntityManager;
-                var getTeam = em.GetComponentDataFromEntity<Team>();
 
                 foreach (var spider in spiders)
                 {
-                    var team = getTeam[spider];
+                    var team = em.GetComponentData<Team>(spider);
                     var isUnit = Team.IsInUnitTeam(team);
                     var isNeutral = Team.IsInNeutralTeam(team);
                     if (isNeutral || !isUnit) continue;
@@ -263,7 +263,10 @@ namespace SpiderKiller.VCFCompat
                             KillerSource = ctx.Event.SenderCharacterEntity,
                             DoNotDestroy = false
                         };
-                        DeathUtilities.Kill(VWorld.Server.EntityManager, spider, dead, deathEvent);
+                        var deathreason = new DeathReason
+                        {
+                        };
+                        DeathUtilities.Kill(VWorld.Server.EntityManager, spider, dead, deathEvent, deathreason);
                         remaining--;
                     }
 

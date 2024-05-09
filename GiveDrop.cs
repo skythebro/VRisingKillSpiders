@@ -2,6 +2,7 @@ using System;
 using BepInEx.Logging;
 using Bloodstone.API;
 using ProjectM;
+using Stunlock.Core;
 using Unity.Entities;
 
 namespace SpiderKiller;
@@ -13,7 +14,7 @@ public class GiveDrop
     {
         try
         {
-            var gameData = VWorld.Server.GetExistingSystem<GameDataSystem>();
+            var gameData = VWorld.Server.GetExistingSystemManaged<GameDataSystem>();
             var itemSettings = AddItemSettings.Create(VWorld.Server.EntityManager, gameData.ItemHashLookupMap);
             InventoryUtilitiesServer.TryAddItem(itemSettings, recipient, guid, amount);
         }

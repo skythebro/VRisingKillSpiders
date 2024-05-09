@@ -8,6 +8,7 @@ using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
 using SpiderKiller.extensions;
+using Stunlock.Core;
 
 namespace SpiderKiller.Patches;
 
@@ -42,10 +43,11 @@ public class AiMoveSystem_Server_Patch
             }
 
             _noUpdateBefore = DateTime.Now.AddSeconds(Settings.CULL_WAIT_TIME.Value);
-
-
-            var emp = __instance.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<PlayerCharacter>())
-                .ToEntityArray(Allocator.Temp);
+            var em = VWorld.Server.EntityManager;
+            // hopefully this works because I cannot find the createnetityquery for AiMoveSystem_Server
+            var emp = em.CreateEntityQuery(ComponentType.ReadOnly<PlayerCharacter>()).ToEntityArray(Allocator.Temp);
+            // var emp = __instance.CreateEntityQuery(ComponentType.ReadOnly<PlayerCharacter>())
+            //     .ToEntityArray(Allocator.Temp);
 
             foreach (var player in emp)
             {
@@ -84,8 +86,8 @@ public class AiMoveSystem_Server_Patch
                 AddCullAmount(count);
                 GiveExtraCullReward(player);
             }
-
-            CheckForCritters(__instance);
+            // not working
+           // CheckForCritters(__instance);
         }
         catch (Exception e)
         {
@@ -114,7 +116,8 @@ public class AiMoveSystem_Server_Patch
             KillerSource = player,
             DoNotDestroy = false
         };
-        DeathUtilities.Kill(VWorld.Server.EntityManager, spider, dead, deathEvent);
+        var deathReason = new DeathReason();
+        DeathUtilities.Kill(VWorld.Server.EntityManager, spider, dead, deathEvent, deathReason);
         // Destroys the entity without giving any drops 
         // DestroyUtility.CreateDestroyEvent(VWorld.Server.EntityManager, spider, DestroyReason.Default, DestroyDebugReason.None);
     }

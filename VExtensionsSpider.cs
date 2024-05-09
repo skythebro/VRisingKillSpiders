@@ -1,7 +1,7 @@
 using System;
 using BepInEx.Logging;
 using Bloodstone.API;
-using ProjectM;
+using Stunlock.Core;
 using Unity.Entities;
 
 namespace SpiderKiller.extensions

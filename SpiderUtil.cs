@@ -3,6 +3,7 @@ using System.Linq;
 using Bloodstone.API;
 using ProjectM;
 using SpiderKiller.extensions;
+using Stunlock.Core;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Transforms;
@@ -37,8 +38,7 @@ internal static class SpiderUtil
             var position = VWorld.Server.EntityManager.GetComponentData<LocalToWorld>(spider).Position;
             var distance = UnityEngine.Vector3.Distance(origin, position); // wait really?
             var em = VWorld.Server.EntityManager;
-            var getTeam = em.GetComponentDataFromEntity<Team>();
-            if (distance < radius && getTeam[spider].FactionIndex == team)
+            if (distance < radius && em.GetComponentData<Team>(spider).FactionIndex == team)
             {
                 results.Add(spider);
             }
@@ -98,7 +98,7 @@ internal static class SpiderUtil
         {
             h.Value = 0.00001f;
             h.MaxRecoveryHealth = 0.00001f;
-            h.MaxHealth.Value = 0.00001f;
+            h.MaxHealth._Value = 0.00001f;
         });
 
         queen.WithComponentDataC((ref AggroConsumer ac) => { ac.Active._Value = false; });
