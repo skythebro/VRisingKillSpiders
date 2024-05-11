@@ -19,7 +19,7 @@ namespace SpiderKiller.VCFCompat
         static Commands()
         {
             Enabled = IL2CPPChainloader.Instance.Plugins.TryGetValue("gg.deca.VampireCommandFramework", out var info);
-            if (Enabled) _log.LogWarning($"VCF Version: {info.Metadata.Version}");
+            if (Enabled) _log.LogInfo($"VCF Version: {info.Metadata.Version}");
         }
 
         public static bool Enabled { get; private set; }
@@ -219,9 +219,9 @@ namespace SpiderKiller.VCFCompat
                 }
 */
                 [Command("teleportToMeSpiders", shortHand: "sptp", adminOnly: true,
-                    description: "Teleports all spiders(Entities with FactionIndex 20) to you in a defined range",
+                    description: "Teleports all spiders(Entities with FactionIndex 21) to you in a defined range",
                     usage: "Usage: .sptp [range]")]
-                public void TeleportToPlayer(ChatCommandContext ctx, float range = 10f, int factionIndex = 20)
+                public void TeleportToPlayer(ChatCommandContext ctx, float range = 10f, int factionIndex = 21)
                 {
                     if (range > 50f) range = 50f;
                     var spiders = SpiderUtil.ClosestSpiders(ctx.Event.SenderCharacterEntity, range, factionIndex);
@@ -239,9 +239,9 @@ namespace SpiderKiller.VCFCompat
                 }
 
                 [Command("killSpiders", shortHand: "spik", adminOnly: false,
-                    description: "Kills all spiders(Entities with FactionIndex 20) in a defined range",
+                    description: "Kills all spiders(Entities with FactionIndex 21) in a defined range",
                     usage: "Usage: .spik [range]")]
-                public void KillEnemy(ChatCommandContext ctx, float range = 10f, int factionIndex = 20)
+                public void KillEnemy(ChatCommandContext ctx, float range = 10f, int factionIndex = 21)
                 {
                     if (range > 50f) range = 50f;
                     var spiders = SpiderUtil.ClosestSpiders(ctx.Event.SenderCharacterEntity, range, factionIndex);

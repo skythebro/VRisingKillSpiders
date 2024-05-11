@@ -1,12 +1,14 @@
 # KillSpiders
 For a full list of changes check on my github page in the [releases](https://github.com/skythebro/VRisingKillSpiders/releases) section.
 
+Updated to 1.0 version of V Rising. I assume ServerLaunchFix isn't updated yet.
+
 ## Installation (Manual)
 
 * Install [BepInEx](https://docs.bepinex.dev/master/articles/user_guide/installation/index.html)
 * Install [Bloodstone](https://v-rising.thunderstore.io/package/deca/Bloodstone) into (VRising server folder)/BepInEx/plugins
 * (optional) Install [VampireCommandFramework](https://v-rising.thunderstore.io/package/deca/VampireCommandFramework/) into (VRising server folder)/BepInEx/plugins
-* (optional) Install [ServerLaunchFix](https://v-rising.thunderstore.io/package/Mythic/ServerLaunchFix/) into (VRising server folder)/BepInEx/plugins
+* ~~(optional) Install [ServerLaunchFix](https://v-rising.thunderstore.io/package/Mythic/ServerLaunchFix/) into (VRising server folder)/BepInEx/plugins~~
 * Extract [KillSpiders.dll](https://thunderstore.io/package/download/Skies/SpiderKiller/1.2.0/) into (VRising server folder)/BepInEx/plugins
 
 ## How to use
@@ -24,7 +26,7 @@ Features:
 
 Optional admin commands (requires [VampireCommandFramework](https://v-rising.thunderstore.io/package/deca/VampireCommandFramework/)):
 - Use the `.spik [range]` command to kill spiders manually if you don't want to let the mod run automatically.
-- Use the `.sptp [range]` command to teleport spiders to you. (if you would want that...)
+- Use the `.sptp [range]` command to teleport spiders to you. (if you would want that..., this was used to test if my command would get all spiders in the area)
 - Use the `.dqueen` command to turn of ungora's aggro and make her one hit (make sure you can see her)
 
 ### Configuration

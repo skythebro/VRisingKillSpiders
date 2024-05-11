@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Bloodstone.API;
 using ProjectM;
+using ProjectM.Gameplay.Scripting;
 using SpiderKiller.extensions;
 using Stunlock.Core;
 using Unity.Collections;
@@ -27,7 +28,7 @@ internal static class SpiderUtil
         return spiderQuery.ToEntityArray(Allocator.Temp);
     }
 
-    internal static List<Entity> ClosestSpiders(Entity e, float radius,int team = 20)
+    internal static List<Entity> ClosestSpiders(Entity e, float radius,int team = 21)
     {
         var spiders = GetSpiders();
         var results = new List<Entity>();
@@ -40,6 +41,9 @@ internal static class SpiderUtil
             var em = VWorld.Server.EntityManager;
             if (distance < radius && em.GetComponentData<Team>(spider).FactionIndex == team)
             {
+#if DEBUG
+                Plugin.LogInstance.LogMessage("A spider found");
+#endif  
                 results.Add(spider);
             }
         }
@@ -59,6 +63,9 @@ internal static class SpiderUtil
             var isQueen = spider.ComparePrefabGuidString(spiderQueen);
             if (isQueen)
             {
+#if DEBUG
+                Plugin.LogInstance.LogMessage("Queen found");
+#endif                
                 return spider;
             }
             
@@ -96,12 +103,32 @@ internal static class SpiderUtil
 
         queen.WithComponentDataC((ref Health h) =>
         {
-            h.Value = 0.00001f;
-            h.MaxRecoveryHealth = 0.00001f;
-            h.MaxHealth._Value = 0.00001f;
+            h.Value = 0.1f;
+            h.MaxRecoveryHealth = 0.1f;
+            h.MaxHealth._Value = 0.1f;
         });
 
         queen.WithComponentDataC((ref AggroConsumer ac) => { ac.Active._Value = false; });
+        
+        queen.WithComponentDataC((ref UnitLevel lvl) => { lvl.Level = new ModifiableInt(1); });
+        
+        queen.WithComponentDataC((ref Vision vs) => { vs.Range = new ModifiableFloat(0); });
+        
+        queen.WithComponentDataC((ref UnitStats us) =>
+        {
+            us.PhysicalPower = new ModifiableFloat(0);
+            us.PassiveHealthRegen = new ModifiableFloat(0);
+            us.HealthRecovery = new ModifiableFloat(0);
+            us.ShieldAbsorbModifier = new ModifiableFloat(0);
+            us.SpellPower = new ModifiableFloat(0); });
+        
+        queen.WithComponentDataC((ref Script_ApplyBuffUnderHealthThreshold_DataServer abuhtds) =>
+        {
+            abuhtds.HealthFactor = new ModifiableFloat(0.1f);
+            abuhtds.ThresholdMet = false;
+        });
+        
+        
         return true;
     }
 }

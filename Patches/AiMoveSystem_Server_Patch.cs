@@ -4,6 +4,8 @@ using BepInEx.Logging;
 using Bloodstone.API;
 using HarmonyLib;
 using ProjectM;
+using ProjectM.Gameplay;
+using ProjectM.Network;
 using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
@@ -12,7 +14,7 @@ using Stunlock.Core;
 
 namespace SpiderKiller.Patches;
 
-[HarmonyPatch(typeof(AiMoveSystem_Server), "OnUpdate")]
+[HarmonyPatch(typeof(AiMoveSystem_Server), nameof(AiMoveSystem_Server.OnUpdate))]
 // ReSharper disable once InconsistentNaming
 public class AiMoveSystem_Server_Patch
 {
@@ -35,22 +37,34 @@ public class AiMoveSystem_Server_Patch
     {
         try
         {
+            
+#if DEBUG
+            _log.LogMessage("running?");
+#endif  
             if (!Settings.ENABLE_CULLING.Value) return;
             if (!VWorld.IsServer) return;
             if (_noUpdateBefore > DateTime.Now)
             {
+#if DEBUG
+                _log.LogMessage("No update before");
+#endif  
                 return;
             }
-
             _noUpdateBefore = DateTime.Now.AddSeconds(Settings.CULL_WAIT_TIME.Value);
             var em = VWorld.Server.EntityManager;
-            // hopefully this works because I cannot find the createnetityquery for AiMoveSystem_Server
-            var emp = em.CreateEntityQuery(ComponentType.ReadOnly<PlayerCharacter>()).ToEntityArray(Allocator.Temp);
-            // var emp = __instance.CreateEntityQuery(ComponentType.ReadOnly<PlayerCharacter>())
-            //     .ToEntityArray(Allocator.Temp);
+            // hopefully this works because changes to AiMoveSystem_Server makes it so I cannot use the createntityquery method
+            var emp = __instance._AiMoveQuery.ToEntityArray(Allocator.Temp);
+#if DEBUG
+            _log.LogMessage("Reached query");
+#endif  
+            //var emp = em.CreateEntityQuery(ComponentType.ReadOnly<PlayerCharacter>()).ToEntityArray(Allocator.Temp);
+            // var emp = __instance.CreateEntityQuery(ComponentType.ReadOnly<PlayerCharacter>()).ToEntityArray(Allocator.Temp);
 
             foreach (var player in emp)
             {
+#if DEBUG
+                _log.LogMessage("Player found");
+#endif  
                 if (Settings.CULL_QUEEN.Value)
                 {
                     if (!_queenDowned || Time.time - lastDownedTime >= 10f * 60f)
@@ -58,6 +72,9 @@ public class AiMoveSystem_Server_Patch
                         _queenEntity = SpiderUtil.GetQueen(player, 10f);
                         if (_queenEntity != Entity.Null)
                         {
+#if DEBUG
+                            _log.LogMessage("Queen found");
+#endif   
                             SpiderUtil.DownQueen(_queenEntity);
                             _log.LogInfo("Queen downed");
                             _queenDowned = true;
@@ -87,7 +104,10 @@ public class AiMoveSystem_Server_Patch
                 GiveExtraCullReward(player);
             }
             // not working
-           // CheckForCritters(__instance);
+            // CheckForCritters(__instance);
+
+
+            emp.Dispose();
         }
         catch (Exception e)
         {
