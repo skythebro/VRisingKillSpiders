@@ -14,9 +14,9 @@ using Stunlock.Core;
 
 namespace SpiderKiller.Patches;
 
-[HarmonyPatch(typeof(AiMoveSystem_Server), nameof(AiMoveSystem_Server.OnUpdate))]
+[HarmonyPatch(typeof(SunSystem), nameof(SunSystem.OnUpdate))]
 // ReSharper disable once InconsistentNaming
-public class AiMoveSystem_Server_Patch
+public class SunSystem_Patch
 {
     // ReSharper disable once InconsistentNaming
     private static ManualLogSource _log => Plugin.LogInstance;
@@ -33,31 +33,25 @@ public class AiMoveSystem_Server_Patch
 
     private static float lastDownedTime = 0f;
 
-    public static void Prefix(AiMoveSystem_Server __instance)
+    public static void Prefix(SunSystem __instance)
     {
+        // AImovesystem_server didnt want to work anymore so I had to find a replacement SunSystem is the closest thing I could find for constant updates for now
         try
         {
-            
-#if DEBUG
-            _log.LogMessage("running?");
-#endif  
             if (!Settings.ENABLE_CULLING.Value) return;
             if (!VWorld.IsServer) return;
             if (_noUpdateBefore > DateTime.Now)
             {
-#if DEBUG
-                _log.LogMessage("No update before");
-#endif  
                 return;
             }
             _noUpdateBefore = DateTime.Now.AddSeconds(Settings.CULL_WAIT_TIME.Value);
             var em = VWorld.Server.EntityManager;
             // hopefully this works because changes to AiMoveSystem_Server makes it so I cannot use the createntityquery method
-            var emp = __instance._AiMoveQuery.ToEntityArray(Allocator.Temp);
+            //var emp = __instance._AiMoveQuery.ToEntityArray(Allocator.Temp);
 #if DEBUG
             _log.LogMessage("Reached query");
 #endif  
-            //var emp = em.CreateEntityQuery(ComponentType.ReadOnly<PlayerCharacter>()).ToEntityArray(Allocator.Temp);
+            var emp = em.CreateEntityQuery(ComponentType.ReadOnly<PlayerCharacter>()).ToEntityArray(Allocator.Temp);
             // var emp = __instance.CreateEntityQuery(ComponentType.ReadOnly<PlayerCharacter>()).ToEntityArray(Allocator.Temp);
 
             foreach (var player in emp)
@@ -112,6 +106,7 @@ public class AiMoveSystem_Server_Patch
         catch (Exception e)
         {
             _log.LogError(e.Message);
+            _log.LogError(e.StackTrace);
         }
     }
 

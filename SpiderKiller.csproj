@@ -3,11 +3,11 @@
         <TargetFramework>net6.0</TargetFramework>
         <AssemblyName>SpiderKiller</AssemblyName>
         <Description>Mod that kills spiders in a range around you and your friends. So you don't have to fight those pesky things</Description>
-        <Version>1.5.0</Version>
+        <Version>1.5.1</Version>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <LangVersion>latest</LangVersion>
-        <AssemblyVersion>1.5.0.0</AssemblyVersion>
-        <FileVersion>1.5.0.0</FileVersion>
+        <AssemblyVersion>1.5.1.0</AssemblyVersion>
+        <FileVersion>1.5.1.0</FileVersion>
         <InformationalVersion>1.5.0+2.Branch.main.Sha.62bb8fcf39ee2ebe62410e48ec8f8fdc72e85b10</InformationalVersion>
     </PropertyGroup>
     <ItemGroup>
