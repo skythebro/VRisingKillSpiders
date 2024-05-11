@@ -6,13 +6,13 @@ Updated to 1.0 version of V Rising. I assume ServerLaunchFix isn't updated yet.
 ## Installation (Manual)
 
 * Install [BepInEx](https://docs.bepinex.dev/master/articles/user_guide/installation/index.html)
-* Install [Bloodstone](https://v-rising.thunderstore.io/package/deca/Bloodstone) into (VRising server folder)/BepInEx/plugins
+* Install [Bloodstone](https://v-rising.thunderstore.io/package/deca/Bloodstone) into (VRising server folder)/BepInEx/plugins (make sure you use version 0.2.0 on the [github](https://github.com/decaprime/Bloodstone/releases) page)
 * (optional) Install [VampireCommandFramework](https://v-rising.thunderstore.io/package/deca/VampireCommandFramework/) into (VRising server folder)/BepInEx/plugins
 * ~~(optional) Install [ServerLaunchFix](https://v-rising.thunderstore.io/package/Mythic/ServerLaunchFix/) into (VRising server folder)/BepInEx/plugins~~
 * Extract [KillSpiders.dll](https://thunderstore.io/package/download/Skies/SpiderKiller/1.2.0/) into (VRising server folder)/BepInEx/plugins
 
 ## How to use
-* If you didn't change anything in the config the mod will work by killing all spiders in a 50 (10 tile) range every 0.5 seconds around all the players in the server.
+* If you didn't change anything in the config the mod will work by killing all spiders in a 50 (10 tile) range every 2 seconds around all the players in the server.
 * It will also affect Ungora the spider queen within 2 tiles of the player it'll make her one hit and make her unable to see you.
 
 ## Updating
@@ -52,8 +52,8 @@ enableQueenCull = true
 
 ## Time in seconds to wait before culling spiders again
 # Setting type: Double
-# Default value: 0.5
-cullWaitTime = 0.5
+# Default value: 2
+cullWaitTime = 2
 
 ## Amount of spiders to cull before rewarding extra silkworm(s)
 # Setting type: Int32
@@ -78,9 +78,6 @@ silkwormGiveAmount = 1
 ### Support
 - Open an issue on [github](https://github.com/skythebro/VRisingKillSpiders/issues)
 - Ask in the V Rising Mod Community [discord](https://vrisingmods.com/discord)
-
-### Support me!
-I have a patreon now so please support me [Here](patreon.com/user?u=97347013) so I can mod as much as I can!
 
 ### Contributors
 - skythebro/skyKDG: `@realskye` on Discord
