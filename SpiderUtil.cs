@@ -3,10 +3,12 @@ using System.Linq;
 using Bloodstone.API;
 using ProjectM;
 using ProjectM.Gameplay.Scripting;
+using ProjectM.Physics;
 using SpiderKiller.extensions;
 using Stunlock.Core;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Mathematics;
 using Unity.Transforms;
 using VampireCommandFramework;
 
@@ -16,16 +18,27 @@ internal static class SpiderUtil
 {
     private static NativeArray<Entity> GetSpiders()
     {
+         // var entityManager = VWorld.Server.EntityManager;
+         // var entities = entityManager.GetAllEntities().ToArray();
+         //
+         // var subset = entities.Where(x => entityManager.HasComponent<Team>(x) && entityManager.GetComponentData<Team>(x).FactionIndex == 21 && !entityManager.HasComponent<Dead>(x) && !entityManager.HasComponent<DestroyTag>(x)).ToList();
+
+        
         var spiderQuery = VWorld.Server.EntityManager.CreateEntityQuery(new EntityQueryDesc()
         {
             All = new[] {
                 ComponentType.ReadOnly<LocalToWorld>(),
-                ComponentType.ReadOnly<Team>()
+                ComponentType.ReadOnly<Team>(),
+                ComponentType.ReadOnly<AiMoveSpeeds>(),
+                ComponentType.ReadOnly<AiMove_Server>()
+                
             },
-            None = new[] { ComponentType.ReadOnly<Dead>(), ComponentType.ReadOnly<DestroyTag>() }
+            None = new[] { ComponentType.ReadOnly<ServantConvertable>(), ComponentType.ReadOnly<BlueprintData>(), ComponentType.ReadOnly<PhysicsRubble>(), ComponentType.ReadOnly<Dead>(), ComponentType.ReadOnly<DestroyTag>() }
         });
-
+        
         return spiderQuery.ToEntityArray(Allocator.Temp);
+        //not efficient enough
+        //return subset;
     }
 
     internal static List<Entity> ClosestSpiders(Entity e, float radius,int team = 21)
@@ -39,11 +52,15 @@ internal static class SpiderUtil
             var position = VWorld.Server.EntityManager.GetComponentData<LocalToWorld>(spider).Position;
             var distance = UnityEngine.Vector3.Distance(origin, position); // wait really?
             var em = VWorld.Server.EntityManager;
+            if (!em.HasComponent<Team>(spider))
+            {
+                continue;
+            }
             if (distance < radius && em.GetComponentData<Team>(spider).FactionIndex == team)
             {
 #if DEBUG
                 Plugin.LogInstance.LogMessage("A spider found");
-#endif  
+#endif
                 results.Add(spider);
             }
         }
@@ -108,7 +125,10 @@ internal static class SpiderUtil
             h.MaxHealth._Value = 0.1f;
         });
 
-        queen.WithComponentDataC((ref AggroConsumer ac) => { ac.Active._Value = false; });
+        queen.WithComponentDataC((ref AggroConsumer ac) =>
+        {
+            ac.Active._Value = false;
+        });
         
         queen.WithComponentDataC((ref UnitLevel lvl) => { lvl.Level = new ModifiableInt(1); });
         
@@ -122,13 +142,15 @@ internal static class SpiderUtil
             us.ShieldAbsorbModifier = new ModifiableFloat(0);
             us.SpellPower = new ModifiableFloat(0); });
         
-        queen.WithComponentDataC((ref Script_ApplyBuffUnderHealthThreshold_DataServer abuhtds) =>
-        {
-            abuhtds.HealthFactor = new ModifiableFloat(0.1f);
-            abuhtds.ThresholdMet = false;
-        });
+        // queen.WithComponentDataC((ref Script_ApplyBuffUnderHealthThreshold_DataServer abuhtds) =>
+        // {
+        //     abuhtds.HealthFactor = new ModifiableFloat(0.1f);
+        //     abuhtds.ThresholdMet = false;
+        // });
         
-        
+#if DEBUG
+        Plugin.LogInstance.LogMessage("Queen got downed");
+#endif
         return true;
     }
 }

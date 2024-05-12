@@ -21,7 +21,7 @@ Updated to 1.0 version of V Rising. I assume ServerLaunchFix isn't updated yet.
 Features:
 - Kills spiders within a certain range of the player and drops their loot on the ground.
 - Auto "downs" Ungora The Spider Queen. This will turn off her aggro and make her one hit.
-- Stops tiny spider critters from spawning. (random event(hopefully))
+- ~~Stops tiny spider critters from spawning. (random event(hopefully))~~
 - Optional config setting to add extra silkworm drops to inventory.
 
 Optional admin commands (requires [VampireCommandFramework](https://v-rising.thunderstore.io/package/deca/VampireCommandFramework/)):
@@ -55,17 +55,12 @@ enableQueenCull = true
 # Default value: 2
 cullWaitTime = 2
 
-## Amount of spiders to cull before rewarding extra silkworm(s)
-# Setting type: Int32
-# Default value: 5
-cullAmountThreshold = 5
-
 ## Range to check for spiders to cull (5=1tile)
 # Setting type: Single
 # Default value: 50
 cullRange = 50
 
-## Amount of silkworms to give when culling 'cullAmountThreshold' worth of spiders
+## Amount of silkworms to for each spider
 # Setting type: Int32
 # Default value: 1
 silkwormGiveAmount = 1

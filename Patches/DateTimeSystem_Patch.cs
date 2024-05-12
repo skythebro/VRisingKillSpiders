@@ -3,9 +3,11 @@ using System.Linq;
 using BepInEx.Logging;
 using Bloodstone.API;
 using HarmonyLib;
+using Il2CppSystem.Threading;
 using ProjectM;
 using ProjectM.Gameplay;
 using ProjectM.Network;
+using ProjectM.Scripting;
 using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
@@ -14,9 +16,9 @@ using Stunlock.Core;
 
 namespace SpiderKiller.Patches;
 
-[HarmonyPatch(typeof(SunSystem), nameof(SunSystem.OnUpdate))]
+[HarmonyPatch(typeof(DateTimeSystem), nameof(DateTimeSystem.OnUpdate))]
 // ReSharper disable once InconsistentNaming
-public class SunSystem_Patch
+public class DateTimeSystem_Patch
 {
     // ReSharper disable once InconsistentNaming
     private static ManualLogSource _log => Plugin.LogInstance;
@@ -31,11 +33,13 @@ public class SunSystem_Patch
 
     private static bool _queenDowned;
 
-    private static float lastDownedTime = 0f;
+    private static float lastDownedTimesecondcheck = 0f;
+    private static GameDateTime lastDownedTime = new GameDateTime();
+    private static EntityManager em = VWorld.Server.EntityManager;
 
-    public static void Prefix(SunSystem __instance)
+    public static void Prefix(ProjectM.DateTimeSystem __instance)
     {
-        // AImovesystem_server didnt want to work anymore so I had to find a replacement SunSystem is the closest thing I could find for constant updates for now
+        // Aimovesystem_server didnt want to work anymore so I had to find a replacement SunSystem is the closest thing I could find for constant updates for now
         try
         {
             if (!Settings.ENABLE_CULLING.Value) return;
@@ -44,64 +48,78 @@ public class SunSystem_Patch
             {
                 return;
             }
+
             _noUpdateBefore = DateTime.Now.AddSeconds(Settings.CULL_WAIT_TIME.Value);
-            var em = VWorld.Server.EntityManager;
             // hopefully this works because changes to AiMoveSystem_Server makes it so I cannot use the createntityquery method
             //var emp = __instance._AiMoveQuery.ToEntityArray(Allocator.Temp);
 #if DEBUG
             _log.LogMessage("Reached query");
-#endif  
-            var emp = em.CreateEntityQuery(ComponentType.ReadOnly<PlayerCharacter>()).ToEntityArray(Allocator.Temp);
-            // var emp = __instance.CreateEntityQuery(ComponentType.ReadOnly<PlayerCharacter>()).ToEntityArray(Allocator.Temp);
+#endif
 
-            foreach (var player in emp)
+            var emp = InitializePlayer_Patch.playerEntityIndices;
+
+            foreach (var playerIndex in emp)
             {
+                var player = em.GetEntityByEntityIndex(playerIndex);
 #if DEBUG
                 _log.LogMessage("Player found");
-#endif  
+#endif
                 if (Settings.CULL_QUEEN.Value)
                 {
-                    if (!_queenDowned || Time.time - lastDownedTime >= 10f * 60f)
-                    {
-                        _queenEntity = SpiderUtil.GetQueen(player, 10f);
+                    var dayNightCycle = VWorld.Server.GetExistingSystemManaged<ServerScriptMapper>()._ServerGameManager
+                        .DayNightCycle;
+                    var now = dayNightCycle.GameDateTimeNow;
+                    double dayDurationInSeconds = dayNightCycle.DayDurationInSeconds;
+                    double secondsPerInGameHour = dayDurationInSeconds / 24;
+                    double hoursForTenMinutes = (9 * 60) / secondsPerInGameHour;
+#if DEBUG
+                    _log.LogMessage( "now.day "+now.Day+" now.Hour: " + now.Hour + " lastDownedTime.Day " + lastDownedTime.Day + " lastDownedTime.Hour + hoursForFiveMinutes " + Math.Floor(lastDownedTime.Hour + hoursForTenMinutes));
+#endif
+                    if (!_queenDowned || Time.time - lastDownedTimesecondcheck >= 10f * 60f || now.Year > lastDownedTime.Year || (now.Year == lastDownedTime.Year && now.Month > lastDownedTime.Month) || (now.Year == lastDownedTime.Year && now.Month == lastDownedTime.Month && now.Day > lastDownedTime.Day) || (now.Year == lastDownedTime.Year && now.Month == lastDownedTime.Month && now.Day == lastDownedTime.Day && now.Hour >= Math.Floor(lastDownedTime.Hour + hoursForTenMinutes))) {
+#if DEBUG
+                        _log.LogMessage( "Queen not downed or time passed");
+#endif
+                        
+                        _queenEntity = SpiderUtil.GetQueen(player, Settings.CULL_RANGE.Value);
                         if (_queenEntity != Entity.Null)
                         {
 #if DEBUG
                             _log.LogMessage("Queen found");
-#endif   
+#endif
                             SpiderUtil.DownQueen(_queenEntity);
-                            _log.LogInfo("Queen downed");
+
                             _queenDowned = true;
-                            lastDownedTime = Time.time;
+                            lastDownedTimesecondcheck = Time.time;
+                            lastDownedTime = dayNightCycle.GameDateTimeNow;
                             _queenEntity = Entity.Null;
                         }
                     }
-                }
 
-                var spiders = SpiderUtil.ClosestSpiders(player, Settings.CULL_RANGE.Value);
-                var count = spiders.Count;
-                var remaining = count;
 
-                foreach (var spider in spiders.TakeWhile(_ => remaining != 0))
-                {
-                    remaining--;
-                    if (IsQueenSpider(spider))
+                    var spiders = SpiderUtil.ClosestSpiders(player, Settings.CULL_RANGE.Value);
+                    spiders.RemoveAll(e => e.ComparePrefabGuidString(_spiderQueen)); // not rly needed but just to be sure
+                    var count = spiders.Count;
+                    var remaining = count;
+                    if (count == 0) continue;
+                    foreach (var spider in spiders.TakeWhile(_ => remaining != 0))
                     {
-                        continue;
+                        remaining--;
+                        if (IsQueenSpider(spider))
+                        {
+                            continue;
+                        }
+
+                        KillSpider(spider, player);
                     }
 
-                    KillSpider(spider, player);
+                    if (!Settings.ENABLE_EXTRA_CULL_REWARD.Value) continue;
+                    AddCullAmount(count);
+                    GiveExtraCullReward(player);
+
+                    // not working
+                    // CheckForCritters(__instance);
                 }
-
-                if (!Settings.ENABLE_EXTRA_CULL_REWARD.Value) continue;
-                AddCullAmount(count);
-                GiveExtraCullReward(player);
             }
-            // not working
-            // CheckForCritters(__instance);
-
-
-            emp.Dispose();
         }
         catch (Exception e)
         {
@@ -132,6 +150,9 @@ public class SunSystem_Patch
             DoNotDestroy = false
         };
         var deathReason = new DeathReason();
+#if DEBUG
+        Plugin.LogInstance.LogMessage("A spider got killed");
+#endif
         DeathUtilities.Kill(VWorld.Server.EntityManager, spider, dead, deathEvent, deathReason);
         // Destroys the entity without giving any drops 
         // DestroyUtility.CreateDestroyEvent(VWorld.Server.EntityManager, spider, DestroyReason.Default, DestroyDebugReason.None);
@@ -182,11 +203,12 @@ public class SunSystem_Patch
 
     private static void GiveExtraCullReward(Entity player)
     {
-        var threshold = Settings.EXTRA_CULL_REWARD_THRESHOLD.Value;
+        var threshold = 1; //changing this to any higher than 1 will cause you to most of the time not get anything due to the way the loop works
         var dropAmount = Settings.SILKWORM_GIVE_AMOUNT.Value;
         var silkworm = new PrefabGUID(-11246506);
 
         var currentCullAmount = GetCullAmount();
+        if (currentCullAmount == 0) return;
         var i = 0;
         while (true)
         {
@@ -200,8 +222,18 @@ public class SunSystem_Patch
             }
 
             if (currentCullAmount >= threshold * i) continue;
-            GiveDrop.AddItemToInventory(player, silkworm, dropAmount * i);
-            ResetCullAmount();
+            if (dropAmount * i > 0)
+            {
+                var succeeded = GiveDrop.AddItemToInventory(player, silkworm, dropAmount * i);
+                ResetCullAmount();
+#if DEBUG
+                if (!succeeded)
+                {
+                    _log.LogWarning("Failed to give extra cull reward");
+                }
+#endif
+            }
+
             break;
         }
     }
