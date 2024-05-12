@@ -14,6 +14,13 @@ public static class UserDisconnected_Patch
     public static void OnUserDisconnected_Patch(ServerBootstrapSystem __instance, NetConnectionId netConnectionId,
         ConnectionStatusChangeReason connectionStatusReason, string extraData)
     {
+        // Check if the NetConnectionId exists in the dictionary
+        if (!__instance._NetEndPointToApprovedUserIndex.ContainsKey(netConnectionId))
+        {
+            // If it doesn't exist, return without doing anything further
+            return;
+        }
+
         var userIndex = __instance._NetEndPointToApprovedUserIndex[netConnectionId];
         var serverClient = __instance._ApprovedUsersLookup[userIndex];
         var userEntity = serverClient.UserEntity;
