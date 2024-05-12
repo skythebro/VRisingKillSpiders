@@ -45,27 +45,31 @@ internal static class SpiderUtil
     {
         var spiders = GetSpiders();
         var results = new List<Entity>();
-        var origin = VWorld.Server.EntityManager.GetComponentData<LocalToWorld>(e).Position;
-
-        foreach (var spider in spiders)
+        if (VWorld.Server.EntityManager.TryGetComponentData<LocalToWorld>(e, out var localToWorld))
         {
-            var position = VWorld.Server.EntityManager.GetComponentData<LocalToWorld>(spider).Position;
-            var distance = UnityEngine.Vector3.Distance(origin, position); // wait really?
-            var em = VWorld.Server.EntityManager;
-            if (!em.HasComponent<Team>(spider))
+            var origin = localToWorld.Position;
+            foreach (var spider in spiders)
             {
-                continue;
-            }
-            if (distance < radius && em.GetComponentData<Team>(spider).FactionIndex == team)
-            {
+                var position = VWorld.Server.EntityManager.GetComponentData<LocalToWorld>(spider).Position;
+                var distance = UnityEngine.Vector3.Distance(origin, position); // wait really?
+                var em = VWorld.Server.EntityManager;
+                if (!em.HasComponent<Team>(spider))
+                {
+                    continue;
+                }
+                if (distance < radius && em.GetComponentData<Team>(spider).FactionIndex == team)
+                {
 #if DEBUG
-                Plugin.LogInstance.LogMessage("A spider found");
+                    Plugin.LogInstance.LogMessage("A spider found");
 #endif
-                results.Add(spider);
+                    results.Add(spider);
+                }
             }
+
+            return results;
         }
 
-        return results;
+        return new List<Entity>();
     }
     
     internal static Entity GetQueen(ChatCommandContext ctx)

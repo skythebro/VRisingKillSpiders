@@ -18,7 +18,7 @@
         <PackageReference Include="VRising.Unhollowed.Client" Version="1.0.0.792660001" />
         <PackageReference Include="VRising.VampireCommandFramework" Version="0.8.4" />
     </ItemGroup>
-    <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-        <Exec Command='copy "C:\Users\bryan\Documents\modding projects\.net\Projects\VRisingKillSpiders\bin\Debug\net6.0\SpiderKiller.dll" "C:\Program Files (x86)\Steam\steamapps\common\VRisingDedicatedServer\BepInEx\plugins"' />
-    </Target>
+<!--    <Target Name="PostBuild" AfterTargets="PostBuildEvent">-->
+<!--        <Exec Command='copy "C:\Users\bryan\Documents\modding projects\.net\Projects\VRisingKillSpiders\bin\Debug\net6.0\SpiderKiller.dll" "C:\Program Files (x86)\Steam\steamapps\common\VRisingDedicatedServer\BepInEx\plugins"' />-->
+<!--    </Target>-->
 </Project>
