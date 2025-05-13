@@ -1,18 +1,18 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using BepInEx.Logging;
-using Bloodstone.API;
 using HarmonyLib;
-using Il2CppSystem.Threading;
 using ProjectM;
-using ProjectM.Gameplay;
-using ProjectM.Network;
+using ProjectM.Gameplay.Scripting;
 using ProjectM.Scripting;
+using ProjectM.Terrain;
 using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
-using SpiderKiller.extensions;
 using Stunlock.Core;
+using VAMP;
 
 namespace SpiderKiller.Patches;
 
@@ -35,57 +35,134 @@ public class DateTimeSystem_Patch
 
     private static float lastDownedTimesecondcheck = 0f;
     private static GameDateTime lastDownedTime = new GameDateTime();
-    private static EntityManager em = VWorld.Server.EntityManager;
-
-    public static void Prefix(ProjectM.DateTimeSystem __instance)
+    
+    private static readonly HashSet<PrefabGUID> BlockedPrefabGUIDs = new HashSet<PrefabGUID>
     {
-        // Aimovesystem_server didnt want to work anymore so I had to find a replacement SunSystem is the closest thing I could find for constant updates for now
+        new PrefabGUID(-764515001), // CHAR_Spider_Baneling
+        new PrefabGUID(-1004061470), // CHAR_Spider_Baneling_Summon
+        new PrefabGUID(342127250), // CHAR_Spider_Broodmother
+        new PrefabGUID(-581295882), // CHAR_Spider_Forest
+        new PrefabGUID(574276383), // CHAR_Spider_Forestling
+        new PrefabGUID(2136899683), // CHAR_Spider_Melee
+        new PrefabGUID(-725251219), // CHAR_Spider_Melee_GateBoss_Summon
+        new PrefabGUID(2119230788), // CHAR_Spider_Melee_Summon
+        new PrefabGUID(-548489519), // CHAR_Spider_Queen_VBlood
+        new PrefabGUID(-943858353), // CHAR_Spider_Queen_VBlood_GateBoss_Major
+        new PrefabGUID(2103131615), // CHAR_Spider_Range
+        new PrefabGUID(1974733695), // CHAR_Spider_Range_Summon
+        new PrefabGUID(1078424589), // CHAR_Spider_Spiderling
+        new PrefabGUID(1767714956), // CHAR_Spider_Spiderling_VerminNest
+        new PrefabGUID(-18289884) // CHAR_Spiderling_Summon
+    };
+    
+    private static readonly HashSet<PrefabGUID> ReplacementPrefabGUIDs = new HashSet<PrefabGUID>
+    {
+       new PrefabGUID(-744966291), // CHAR_Cursed_Mosquito
+       new PrefabGUID(-218175217), // CHAR_Cursed_Wolf
+       new PrefabGUID(-2072914343), // CHAR_Critter_Rat
+       new PrefabGUID(-559819989) // CHAR_Cursed_Bear_Standard
+    };
+
+    public static void Prefix(DateTimeSystem __instance)
+    {
         try
         {
             if (!Settings.ENABLE_CULLING.Value) return;
-            if (!VWorld.IsServer) return;
+            if (Application.productName == "VRising") return;
             if (_noUpdateBefore > DateTime.Now)
             {
                 return;
             }
 
             _noUpdateBefore = DateTime.Now.AddSeconds(Settings.CULL_WAIT_TIME.Value);
-            // hopefully this works because changes to AiMoveSystem_Server makes it so I cannot use the createntityquery method
-            //var emp = __instance._AiMoveQuery.ToEntityArray(Allocator.Temp);
+            if (!Plugin.HasInitialized) return;
+            EntityManager em = Core.Server.EntityManager;
+            EntityQuery querySpawnRegion = Core.Server.EntityManager.CreateEntityQuery(new EntityQueryDesc
+            {
+                All = new[] { ComponentType.ReadOnly<SpawnRegion>() },
+                Any = new[] { ComponentType.ReadOnly<SpawnRegionSpawnSlotEntry>(), ComponentType.ReadOnly<SpawnGroupBuffer>() },
+                Options = EntityQueryOptions.IncludeDisabled
+            });
+            foreach (Entity spawnRegion in querySpawnRegion.ToEntityArray(Allocator.Temp))
+            {
+                if (Core.Server.EntityManager.TryGetBuffer<SpawnRegionSpawnSlotEntry>(spawnRegion, out var spawnSlotEntries))
+                {
+                    for (int i = 0; i < spawnSlotEntries.Length; i++)
+                    {
+                        var entry = spawnSlotEntries[i];
+                        if (!BlockedPrefabGUIDs.Contains(entry.Entity.GetPrefabGuid())) continue;
 #if DEBUG
-            _log.LogMessage("Reached query");
+                        Plugin.LogInstance.LogMessage($"[spawnSlotEntries] current {entry.Entity.GetPrefabGuidNameString()} has spawned?: {entry.HasSpawned}");
+#endif
+                        var prefabGUID = ReplacementPrefabGUIDs.ElementAt(UnityEngine.Random.Range(0, ReplacementPrefabGUIDs.Count));
+                        var prefabEntity = EntityQueryHelper.QueryEntityWithPrefabGUID(Core.Server.EntityManager, prefabGUID.GuidHash);
+
+                        if (prefabEntity == Entity.Null) continue;
+#if DEBUG
+                        Plugin.LogInstance.LogMessage($"[spawnSlotEntries] with {prefabGUID.GetNamefromPrefabGuid()}");
+#endif
+                        entry.Entity = Core.Server.EntityManager.Instantiate(prefabEntity);
+                        spawnSlotEntries[i] = entry;
+                    }
+                }
+
+                if (!Core.Server.EntityManager.TryGetBuffer<SpawnGroupBuffer>(spawnRegion, out var spawnGroupBuffer))
+                    continue;
+                
+                foreach (var group in spawnGroupBuffer)
+                {
+                    if (!Core.Server.EntityManager.TryGetBuffer<SpawnGroup_SpawnTableBuffer>(group.SpawnGroup,
+                            out var spawnTableBuffer)) continue;
+                    
+                    for (int i = 0; i < spawnTableBuffer.Length; i++)
+                    {
+                        var spawnGroup = spawnTableBuffer[i];
+                        if (!BlockedPrefabGUIDs.Contains(spawnGroup.Prefab)) continue;
+#if DEBUG
+                        Plugin.LogInstance.LogMessage($"[spawnGroup] found {spawnTableBuffer[i].Prefab.GetNamefromPrefabGuid()}");
 #endif
 
+                        spawnGroup.Prefab = ReplacementPrefabGUIDs.ElementAt(UnityEngine.Random.Range(0, ReplacementPrefabGUIDs.Count));
+                        if (spawnGroup.Prefab == ReplacementPrefabGUIDs.ElementAt(3)) // is bear?
+                        {
+                            spawnGroup.Amount = 1;
+                        }
+#if DEBUG
+                        Plugin.LogInstance.LogMessage($"[spawnGroup] replaced with {spawnGroup.Prefab.GetNamefromPrefabGuid()}");
+#endif
+                        spawnTableBuffer[i] = spawnGroup;
+                    }
+                }
+            }
+            
+            
             var emp = InitializePlayer_Patch.playerEntityIndices;
 
             foreach (var playerIndex in emp)
             {
                 var player = em.GetEntityByEntityIndex(playerIndex);
-#if DEBUG
-                _log.LogMessage("Player found");
-#endif
                 if (Settings.CULL_QUEEN.Value)
                 {
-                    var dayNightCycle = VWorld.Server.GetExistingSystemManaged<ServerScriptMapper>()._ServerGameManager
+                    var dayNightCycle = Core.Server.GetExistingSystemManaged<ServerScriptMapper>()._ServerGameManager
                         .DayNightCycle;
                     var now = dayNightCycle.GameDateTimeNow;
                     double dayDurationInSeconds = dayNightCycle.DayDurationInSeconds;
                     double secondsPerInGameHour = dayDurationInSeconds / 24;
                     double hoursForTenMinutes = (9 * 60) / secondsPerInGameHour;
-#if DEBUG
-                    _log.LogMessage( "now.day "+now.Day+" now.Hour: " + now.Hour + " lastDownedTime.Day " + lastDownedTime.Day + " lastDownedTime.Hour + hoursForFiveMinutes " + Math.Floor(lastDownedTime.Hour + hoursForTenMinutes));
-#endif
-                    if (!_queenDowned || Time.time - lastDownedTimesecondcheck >= 10f * 60f || now.Year > lastDownedTime.Year || (now.Year == lastDownedTime.Year && now.Month > lastDownedTime.Month) || (now.Year == lastDownedTime.Year && now.Month == lastDownedTime.Month && now.Day > lastDownedTime.Day) || (now.Year == lastDownedTime.Year && now.Month == lastDownedTime.Month && now.Day == lastDownedTime.Day && now.Hour >= Math.Floor(lastDownedTime.Hour + hoursForTenMinutes))) {
-#if DEBUG
-                        _log.LogMessage( "Queen not downed or time passed");
-#endif
-                        
+                    if (!_queenDowned || Time.time - lastDownedTimesecondcheck >= 10f * 60f ||
+                        now.Year > lastDownedTime.Year ||
+                        (now.Year == lastDownedTime.Year && now.Month > lastDownedTime.Month) ||
+                        (now.Year == lastDownedTime.Year && now.Month == lastDownedTime.Month &&
+                         now.Day > lastDownedTime.Day) || (now.Year == lastDownedTime.Year &&
+                                                           now.Month == lastDownedTime.Month &&
+                                                           now.Day == lastDownedTime.Day &&
+                                                           now.Hour >= Math.Floor(lastDownedTime.Hour +
+                                                               hoursForTenMinutes)))
+                    {
+
                         _queenEntity = SpiderUtil.GetQueen(player, Settings.CULL_RANGE.Value);
                         if (_queenEntity != Entity.Null)
                         {
-#if DEBUG
-                            _log.LogMessage("Queen found");
-#endif
                             SpiderUtil.DownQueen(_queenEntity);
 
                             _queenDowned = true;
@@ -94,36 +171,35 @@ public class DateTimeSystem_Patch
                             _queenEntity = Entity.Null;
                         }
                     }
+                }
 
-
-                    var spiders = SpiderUtil.ClosestSpiders(player, Settings.CULL_RANGE.Value);
-                    spiders.RemoveAll(e => e.ComparePrefabGuidString(_spiderQueen)); // not rly needed but just to be sure
-                    var count = spiders.Count;
-                    var remaining = count;
-                    if (count == 0) continue;
-                    foreach (var spider in spiders.TakeWhile(_ => remaining != 0))
+                var spiders = SpiderUtil.ClosestSpiders(player, Settings.CULL_RANGE.Value);
+                spiders.RemoveAll(e => e.ComparePrefabGuidString(_spiderQueen)); // not rly needed but just to be sure
+                var count = spiders.Count;
+                var remaining = count;
+                if (count == 0) continue;
+                foreach (var spider in spiders.TakeWhile(_ => remaining != 0))
+                {
+                    remaining--;
+                    if (IsQueenSpider(spider))
                     {
-                        remaining--;
-                        if (IsQueenSpider(spider))
-                        {
-                            continue;
-                        }
-
-                        KillSpider(spider, player);
+                        continue;
                     }
 
-                    if (!Settings.ENABLE_EXTRA_CULL_REWARD.Value) continue;
-                    AddCullAmount(count);
-                    GiveExtraCullReward(player);
-
-                    // not working
-                    // CheckForCritters(__instance);
+                    KillSpider(spider, player);
                 }
+
+                if (!Settings.ENABLE_EXTRA_CULL_REWARD.Value) continue;
+                AddCullAmount(count);
+                GiveExtraCullReward(player);
+
+                // not working
+                // CheckForCritters(__instance);
             }
         }
         catch (Exception e)
         {
-            _log.LogError(e.Message);
+            _log.LogError($"Exception in DateTimeSystem_Patch.Prefix: {e.Message}");
             _log.LogError(e.StackTrace);
         }
     }
@@ -150,12 +226,9 @@ public class DateTimeSystem_Patch
             DoNotDestroy = false
         };
         var deathReason = new DeathReason();
-#if DEBUG
-        Plugin.LogInstance.LogMessage("A spider got killed");
-#endif
-        DeathUtilities.Kill(VWorld.Server.EntityManager, spider, dead, deathEvent, deathReason);
+        DeathUtilities.Kill(Core.Server.EntityManager, spider, dead, deathEvent, deathReason);
         // Destroys the entity without giving any drops 
-        // DestroyUtility.CreateDestroyEvent(VWorld.Server.EntityManager, spider, DestroyReason.Default, DestroyDebugReason.None);
+        // DestroyUtility.CreateDestroyEvent(Core.Server.EntityManager, spider, DestroyReason.Default, DestroyDebugReason.None);
     }
 
     private static void AddCullAmount(int amount)
@@ -203,7 +276,8 @@ public class DateTimeSystem_Patch
 
     private static void GiveExtraCullReward(Entity player)
     {
-        var threshold = 1; //changing this to any higher than 1 will cause you to most of the time not get anything due to the way the loop works
+        var
+            threshold = 1; //changing this to any higher than 1 will cause you to most of the time not get anything due to the way the loop works
         var dropAmount = Settings.SILKWORM_GIVE_AMOUNT.Value;
         var silkworm = new PrefabGUID(-11246506);
 
@@ -235,6 +309,32 @@ public class DateTimeSystem_Patch
             }
 
             break;
+        }
+    }
+
+    public static class EntityQueryHelper
+    {
+        public static Entity QueryEntityWithPrefabGUID(EntityManager entityManager, int targetPrefabGUID)
+        {
+            // Create an EntityQuery for entities with the PrefabGUID component
+            var query = entityManager.CreateEntityQuery(ComponentType.ReadOnly<PrefabGUID>());
+
+            // Iterate through the entities in the query
+            var entities = query.ToEntityArray(Allocator.Temp);
+            foreach (var entity in entities)
+            {
+                // Get the PrefabGUID component data
+                var hasGUID = entityManager.TryGetComponentData<PrefabGUID>(entity, out var prefabGUID);
+                if (!hasGUID) continue;
+                // Check if it matches the target value
+                if (prefabGUID.GuidHash == targetPrefabGUID)
+                {
+                    return entity; // Return the matching entity
+                }
+            }
+
+            // Return Entity.Null if no matching entity is found
+            return Entity.Null;
         }
     }
 }

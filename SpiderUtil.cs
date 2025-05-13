@@ -1,15 +1,12 @@
 using System.Collections.Generic;
 using System.Linq;
-using Bloodstone.API;
 using ProjectM;
-using ProjectM.Gameplay.Scripting;
 using ProjectM.Physics;
-using SpiderKiller.extensions;
 using Stunlock.Core;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Mathematics;
 using Unity.Transforms;
+using VAMP;
 using VampireCommandFramework;
 
 namespace SpiderKiller;
@@ -18,13 +15,13 @@ internal static class SpiderUtil
 {
     private static NativeArray<Entity> GetSpiders()
     {
-         // var entityManager = VWorld.Server.EntityManager;
+         // var entityManager = Core.Server.EntityManager;
          // var entities = entityManager.GetAllEntities().ToArray();
          //
          // var subset = entities.Where(x => entityManager.HasComponent<Team>(x) && entityManager.GetComponentData<Team>(x).FactionIndex == 21 && !entityManager.HasComponent<Dead>(x) && !entityManager.HasComponent<DestroyTag>(x)).ToList();
 
         
-        var spiderQuery = VWorld.Server.EntityManager.CreateEntityQuery(new EntityQueryDesc()
+        var spiderQuery = Core.Server.EntityManager.CreateEntityQuery(new EntityQueryDesc()
         {
             All = new[] {
                 ComponentType.ReadOnly<LocalToWorld>(),
@@ -33,7 +30,8 @@ internal static class SpiderUtil
                 ComponentType.ReadOnly<AiMove_Server>()
                 
             },
-            None = new[] { ComponentType.ReadOnly<ServantConvertable>(), ComponentType.ReadOnly<BlueprintData>(), ComponentType.ReadOnly<PhysicsRubble>(), ComponentType.ReadOnly<Dead>(), ComponentType.ReadOnly<DestroyTag>() }
+            None = new[] { ComponentType.ReadOnly<ServantConvertable>(), ComponentType.ReadOnly<BlueprintData>(), ComponentType.ReadOnly<PhysicsRubble>(), ComponentType.ReadOnly<Dead>(), ComponentType.ReadOnly<DestroyTag>() },
+            Options = EntityQueryOptions.IncludeDisabled
         });
         
         return spiderQuery.ToEntityArray(Allocator.Temp);
@@ -41,18 +39,18 @@ internal static class SpiderUtil
         //return subset;
     }
 
-    internal static List<Entity> ClosestSpiders(Entity e, float radius,int team = 21)
+    internal static List<Entity> ClosestSpiders(Entity e, float radius,int team = 25)
     {
         var spiders = GetSpiders();
         var results = new List<Entity>();
-        if (VWorld.Server.EntityManager.TryGetComponentData<LocalToWorld>(e, out var localToWorld))
+        if (Core.Server.EntityManager.TryGetComponentData<LocalToWorld>(e, out var localToWorld))
         {
             var origin = localToWorld.Position;
             foreach (var spider in spiders)
             {
-                var position = VWorld.Server.EntityManager.GetComponentData<LocalToWorld>(spider).Position;
+                var position = Core.Server.EntityManager.GetComponentData<LocalToWorld>(spider).Position;
                 var distance = UnityEngine.Vector3.Distance(origin, position); // wait really?
-                var em = VWorld.Server.EntityManager;
+                var em = Core.Server.EntityManager;
                 if (!em.HasComponent<Team>(spider))
                 {
                     continue;
@@ -143,14 +141,8 @@ internal static class SpiderUtil
             us.PhysicalPower = new ModifiableFloat(0);
             us.PassiveHealthRegen = new ModifiableFloat(0);
             us.HealthRecovery = new ModifiableFloat(0);
-            us.ShieldAbsorbModifier = new ModifiableFloat(0);
             us.SpellPower = new ModifiableFloat(0); });
         
-        // queen.WithComponentDataC((ref Script_ApplyBuffUnderHealthThreshold_DataServer abuhtds) =>
-        // {
-        //     abuhtds.HealthFactor = new ModifiableFloat(0.1f);
-        //     abuhtds.ThresholdMet = false;
-        // });
         
 #if DEBUG
         Plugin.LogInstance.LogMessage("Queen got downed");

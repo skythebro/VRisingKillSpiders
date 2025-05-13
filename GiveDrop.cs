@@ -1,10 +1,8 @@
 using BepInEx.Logging;
-using Bloodstone.API;
-using ProjectM;
-using ProjectM.Network;
 using ProjectM.Scripting;
 using Stunlock.Core;
 using Unity.Entities;
+using VAMP;
 using Exception = System.Exception;
 
 namespace SpiderKiller;
@@ -18,7 +16,7 @@ public class GiveDrop
         try
         {
             ServerGameManager serverGameManager =
-                VWorld.Server.GetExistingSystemManaged<ServerScriptMapper>()._ServerGameManager;
+                Core.Server.GetExistingSystemManaged<ServerScriptMapper>()._ServerGameManager;
             var inventoryResponse = serverGameManager.TryAddInventoryItem(recipient, guid, amount);
 #if DEBUG
             _log.LogMessage($"AddItemToInventory: {inventoryResponse.Success}");

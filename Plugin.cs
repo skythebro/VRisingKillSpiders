@@ -1,56 +1,61 @@
 ﻿using BepInEx;
 using BepInEx.Unity.IL2CPP;
-using Bloodstone.API;
 using HarmonyLib;
 using System.Reflection;
 using BepInEx.Logging;
+using UnityEngine;
+
 
 namespace SpiderKiller;
 
 [BepInPlugin(MyPluginInfo.PLUGIN_GUID, MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
 [BepInDependency("gg.deca.VampireCommandFramework", BepInDependency.DependencyFlags.SoftDependency)]
-[BepInDependency("gg.deca.Bloodstone")]
-[Reloadable]
-public class Plugin : BasePlugin, IRunOnInitialized
+public class Plugin : BasePlugin
 {
-    private Harmony _harmony;
+    public static Harmony Harmony;
 
+    public static bool HasInitialized = false;
     public static ManualLogSource LogInstance { get; private set; }
     
     public override void Load()
     {
         LogInstance = Log;
+        Harmony = Harmony.CreateAndPatchAll(Assembly.GetExecutingAssembly());
         Settings.Initialize(Config);
-        
-        if (!VWorld.IsServer)
+
+        if (Application.productName == "VRising")
         {
             Log.LogWarning("This plugin is a server-only plugin!");
         }
     }
     
-    public void OnGameInitialized()
+    public static void Initialize()
     {
-        if (VWorld.IsClient)
+        if (Application.productName == "VRising")
         {
             return;
         }
-        _harmony = Harmony.CreateAndPatchAll(Assembly.GetExecutingAssembly());
-        Log.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
+        if (HasInitialized)
+            return;
         
-        Log.LogInfo("Looking if VCF is installed:");
+        LogInstance.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
+        
+        LogInstance.LogInfo("Looking if VCF is installed:");
         if (VCFCompat.Commands.Enabled)
         {
             VCFCompat.Commands.Register();
         }
         else
         {
-            Log.LogInfo("This mod has extra admin commands. Install VampireCommandFramework to use them.");
+            LogInstance.LogInfo("This mod has extra admin commands. Install VampireCommandFramework to use them.");
         }
+
+        HasInitialized = true;
     }
 
     public override bool Unload()
     {
-        _harmony?.UnpatchSelf();
+        Harmony?.UnpatchSelf();
         return true;
     }
 }
