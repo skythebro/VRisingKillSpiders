@@ -20,13 +20,10 @@ public static class InitializePlayer_Patch
         try
         {
             //RespawnAi(Entity fromCharacter, RespawnAiDebugEvent clientEvent);
-
-            var userIndex = Core.Server.GetExistingSystemManaged<ServerBootstrapSystem>()
-                ._NetEndPointToApprovedUserIndex[netConnectionId];
-            var serverClient = Core.Server.GetExistingSystemManaged<ServerBootstrapSystem>()
-                ._ApprovedUsersLookup[userIndex];
+            var userIndex = __instance._NetEndPointToApprovedUserIndex[netConnectionId];
+            var serverClient = __instance._ApprovedUsersLookup[userIndex];
             var userEntity = serverClient.UserEntity;
-            var user = Core.Server.EntityManager.GetComponentData<User>(userEntity);
+            var user = Core.EntityManager.GetComponentData<User>(userEntity);
             var player = user.LocalCharacter.GetEntityOnServer();
 
             if (Settings.ENABLE_UNGORA_UNLOCK.Value) // unlock Ungora progression if enabled
@@ -34,7 +31,7 @@ public static class InitializePlayer_Patch
                 UnlockVBlood debugEvent = new UnlockVBlood();
                 debugEvent.VBlood = new PrefabGUID(-548489519);
                 UnlockProgressionDebugEvent evt = new UnlockProgressionDebugEvent();
-                DebugEventsSystem debugEventsSystem = Core.Server.GetExistingSystemManaged<DebugEventsSystem>();
+                DebugEventsSystem debugEventsSystem = Core.SystemService.DebugEventsSystem;
 
                 evt.PrefabGuid = new PrefabGUID(574648849);
                 debugEventsSystem.UnlockProgression(

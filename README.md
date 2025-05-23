@@ -5,9 +5,9 @@ Updated to 1.1 version of V Rising.
 
 ## Installation (Manual)
 
-* Install [BepInEx](https://github.com/CrimsonMods/BepInEx/releases)
+* Install [BepInEx](https://thunderstore.io/c/v-rising/p/BepInEx/BepInExPack_V_Rising/)
 * Install [VAMP](https://thunderstore.io/c/v-rising/p/skytech6/VAMP/)
-* (optional) Install [VampireCommandFramework](https://github.com/decaprime/VampireCommandFramework/releases) into (VRising server folder)/BepInEx/plugins
+* (optional) Install [VampireCommandFramework](https://thunderstore.io/c/v-rising/p/deca/VampireCommandFramework/) into (VRising server folder)/BepInEx/plugins
 * (optional) Install [ServerLaunchFix](https://v-rising.thunderstore.io/package/Mythic/ServerLaunchFix/) into (VRising server folder)/BepInEx/plugins
 * Extract _**KillSpiders.dll**_ into (VRising server folder)/BepInEx/plugins
 
