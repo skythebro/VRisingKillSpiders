@@ -14,9 +14,9 @@
         <PackageReference Include="BepInEx.Unity.IL2CPP" Version="6.0.0-be.735" IncludeAssets="compile" />
         <PackageReference Include="BepInEx.Core" Version="6.0.0-be.735" IncludeAssets="compile" />
         <PackageReference Include="BepInEx.PluginInfoProps" Version="2.1.0" />
-        <PackageReference Include="VRising.Unhollowed.Client" Version="1.1.7.9169101" />
-        <PackageReference Include="VRising.VAMP" Version="0.3.4" />
-        <PackageReference Include="VRising.VampireCommandFramework" Version="0.10.0" />
+        <PackageReference Include="VRising.UnhollowedX.Client" Version="1.0.8" />
+        <PackageReference Include="VRising.VAMP" Version="1.0.0" />
+        <PackageReference Include="VRising.VampireCommandFramework" Version="0.10.2" />
     </ItemGroup>
 <!--    <Target Name="PostBuild" AfterTargets="PostBuildEvent">-->
 <!--        <Exec Command='copy "C:\Users\bryan\Documents\modding projects\.net\Projects\VRisingKillSpiders\bin\Debug\net6.0\SpiderKiller.dll" "C:\Program Files (x86)\Steam\steamapps\common\VRisingDedicatedServer\BepInEx\plugins"' />-->

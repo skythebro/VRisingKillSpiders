@@ -36,7 +36,7 @@ namespace SpiderKiller.VCFCompat
             public override Spider Parse(ChatCommandContext ctx, string input)
             {
                 var spiders = SpiderUtil.ClosestSpiders(ctx.Event.SenderCharacterEntity, Radius);
-                var em = Core.Server.EntityManager;
+                var em = Core.EntityManager;
 
                 foreach (var spider in spiders)
                 {

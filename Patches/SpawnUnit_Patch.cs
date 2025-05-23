@@ -4,6 +4,7 @@ using Unity.Mathematics;
 using HarmonyLib;
 using ProjectM;
 using Unity.Entities;
+using VAMP;
 
 namespace SpiderKiller.Patches;
 
@@ -38,7 +39,7 @@ public static class SpawnUnit_Patch
         // Check if the PrefabGUID is in the blocked list
         return !BlockedPrefabGUIDs.Contains(prefabGuid);
 #if DEBUG
-        String name = Core.Server.GetExistingSystemManaged<PrefabCollectionSystem>()._PrefabLookupMap.GetName(prefabGuid);
+        string name = Core.Server.GetExistingSystemManaged<PrefabCollectionSystem>()._PrefabLookupMap.GetName(prefabGuid);
         Plugin.LogInstance.LogMessage($"Blocked spawning of PrefabGUID: {prefabGuid} name: {name}");
 #endif
     }

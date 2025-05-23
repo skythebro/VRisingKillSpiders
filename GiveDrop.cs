@@ -1,8 +1,7 @@
 using BepInEx.Logging;
-using ProjectM.Scripting;
 using Stunlock.Core;
 using Unity.Entities;
-using VAMP;
+using VAMP.Utilities;
 using Exception = System.Exception;
 
 namespace SpiderKiller;
@@ -15,13 +14,11 @@ public class GiveDrop
     {
         try
         {
-            ServerGameManager serverGameManager =
-                Core.Server.GetExistingSystemManaged<ServerScriptMapper>()._ServerGameManager;
-            var inventoryResponse = serverGameManager.TryAddInventoryItem(recipient, guid, amount);
+            var inventoryResponse = ItemUtil.AddItemToInventory(recipient, guid, amount, out var _);
 #if DEBUG
-            _log.LogMessage($"AddItemToInventory: {inventoryResponse.Success}");
+            _log.LogMessage($"AddItemToInventory: {inventoryResponse}");
 #endif
-            return inventoryResponse.Success;
+            return inventoryResponse;
         }
         catch (Exception e)
         {

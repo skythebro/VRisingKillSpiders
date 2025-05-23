@@ -9,12 +9,12 @@ using UnityEngine;
 namespace SpiderKiller;
 
 [BepInPlugin(MyPluginInfo.PLUGIN_GUID, MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
+[BepInDependency("VAMP")]
 [BepInDependency("gg.deca.VampireCommandFramework", BepInDependency.DependencyFlags.SoftDependency)]
 public class Plugin : BasePlugin
 {
     public static Harmony Harmony;
 
-    public static bool HasInitialized = false;
     public static ManualLogSource LogInstance { get; private set; }
     
     public override void Load()
@@ -26,17 +26,18 @@ public class Plugin : BasePlugin
         if (Application.productName == "VRising")
         {
             Log.LogWarning("This plugin is a server-only plugin!");
+            return;
         }
+
+        VAMP.Events.OnCoreLoaded += Initialize;
     }
     
-    public static void Initialize()
+    private static void Initialize()
     {
         if (Application.productName == "VRising")
         {
             return;
         }
-        if (HasInitialized)
-            return;
         
         LogInstance.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
         
@@ -49,8 +50,6 @@ public class Plugin : BasePlugin
         {
             LogInstance.LogInfo("This mod has extra admin commands. Install VampireCommandFramework to use them.");
         }
-
-        HasInitialized = true;
     }
 
     public override bool Unload()

@@ -13,6 +13,7 @@ using Unity.Entities;
 using UnityEngine;
 using Stunlock.Core;
 using VAMP;
+using VAMP.Data;
 
 namespace SpiderKiller.Patches;
 
@@ -38,29 +39,29 @@ public class DateTimeSystem_Patch
     
     private static readonly HashSet<PrefabGUID> BlockedPrefabGUIDs = new HashSet<PrefabGUID>
     {
-        new PrefabGUID(-764515001), // CHAR_Spider_Baneling
-        new PrefabGUID(-1004061470), // CHAR_Spider_Baneling_Summon
-        new PrefabGUID(342127250), // CHAR_Spider_Broodmother
-        new PrefabGUID(-581295882), // CHAR_Spider_Forest
-        new PrefabGUID(574276383), // CHAR_Spider_Forestling
-        new PrefabGUID(2136899683), // CHAR_Spider_Melee
-        new PrefabGUID(-725251219), // CHAR_Spider_Melee_GateBoss_Summon
-        new PrefabGUID(2119230788), // CHAR_Spider_Melee_Summon
-        new PrefabGUID(-548489519), // CHAR_Spider_Queen_VBlood
-        new PrefabGUID(-943858353), // CHAR_Spider_Queen_VBlood_GateBoss_Major
-        new PrefabGUID(2103131615), // CHAR_Spider_Range
-        new PrefabGUID(1974733695), // CHAR_Spider_Range_Summon
-        new PrefabGUID(1078424589), // CHAR_Spider_Spiderling
-        new PrefabGUID(1767714956), // CHAR_Spider_Spiderling_VerminNest
-        new PrefabGUID(-18289884) // CHAR_Spiderling_Summon
+        Prefabs.CHAR_Spider_Baneling, 
+        Prefabs.CHAR_Spider_Baneling_Summon, 
+        Prefabs.CHAR_Spider_Broodmother, 
+        Prefabs.CHAR_Spider_Forest, 
+        Prefabs.CHAR_Spider_Forestling, 
+        Prefabs.CHAR_Spider_Melee, 
+        Prefabs.CHAR_Spider_Melee_GateBoss_Summon, 
+        Prefabs.CHAR_Spider_Melee_Summon, 
+        Prefabs.CHAR_Spider_Queen_VBlood, 
+        Prefabs.CHAR_Spider_Queen_VBlood_GateBoss_Major,
+        Prefabs.CHAR_Spider_Range, 
+        Prefabs.CHAR_Spider_Range_Summon, 
+        Prefabs.CHAR_Spider_Spiderling, 
+        Prefabs.CHAR_Spider_Spiderling_VerminNest, 
+        Prefabs.CHAR_Spiderling_Summon
     };
     
     private static readonly HashSet<PrefabGUID> ReplacementPrefabGUIDs = new HashSet<PrefabGUID>
     {
-       new PrefabGUID(-744966291), // CHAR_Cursed_Mosquito
-       new PrefabGUID(-218175217), // CHAR_Cursed_Wolf
-       new PrefabGUID(-2072914343), // CHAR_Critter_Rat
-       new PrefabGUID(-559819989) // CHAR_Cursed_Bear_Standard
+       Prefabs.CHAR_Cursed_Mosquito, 
+       Prefabs.CHAR_Cursed_Wolf, 
+       Prefabs.CHAR_Critter_Rat,
+       Prefabs.CHAR_Cursed_Bear_Standard
     };
 
     public static void Prefix(DateTimeSystem __instance)
@@ -75,9 +76,9 @@ public class DateTimeSystem_Patch
             }
 
             _noUpdateBefore = DateTime.Now.AddSeconds(Settings.CULL_WAIT_TIME.Value);
-            if (!Plugin.HasInitialized) return;
-            EntityManager em = Core.Server.EntityManager;
-            EntityQuery querySpawnRegion = Core.Server.EntityManager.CreateEntityQuery(new EntityQueryDesc
+            if (!Core.hasInitialized) return;
+            EntityManager em = Core.EntityManager;
+            EntityQuery querySpawnRegion = em.CreateEntityQuery(new EntityQueryDesc
             {
                 All = new[] { ComponentType.ReadOnly<SpawnRegion>() },
                 Any = new[] { ComponentType.ReadOnly<SpawnRegionSpawnSlotEntry>(), ComponentType.ReadOnly<SpawnGroupBuffer>() },
@@ -85,7 +86,7 @@ public class DateTimeSystem_Patch
             });
             foreach (Entity spawnRegion in querySpawnRegion.ToEntityArray(Allocator.Temp))
             {
-                if (Core.Server.EntityManager.TryGetBuffer<SpawnRegionSpawnSlotEntry>(spawnRegion, out var spawnSlotEntries))
+                if (em.TryGetBuffer<SpawnRegionSpawnSlotEntry>(spawnRegion, out var spawnSlotEntries))
                 {
                     for (int i = 0; i < spawnSlotEntries.Length; i++)
                     {
@@ -95,23 +96,23 @@ public class DateTimeSystem_Patch
                         Plugin.LogInstance.LogMessage($"[spawnSlotEntries] current {entry.Entity.GetPrefabGuidNameString()} has spawned?: {entry.HasSpawned}");
 #endif
                         var prefabGUID = ReplacementPrefabGUIDs.ElementAt(UnityEngine.Random.Range(0, ReplacementPrefabGUIDs.Count));
-                        var prefabEntity = EntityQueryHelper.QueryEntityWithPrefabGUID(Core.Server.EntityManager, prefabGUID.GuidHash);
+                        var prefabEntity = EntityQueryHelper.QueryEntityWithPrefabGUID(em, prefabGUID.GuidHash);
 
                         if (prefabEntity == Entity.Null) continue;
 #if DEBUG
                         Plugin.LogInstance.LogMessage($"[spawnSlotEntries] with {prefabGUID.GetNamefromPrefabGuid()}");
 #endif
-                        entry.Entity = Core.Server.EntityManager.Instantiate(prefabEntity);
+                        entry.Entity = em.Instantiate(prefabEntity);
                         spawnSlotEntries[i] = entry;
                     }
                 }
 
-                if (!Core.Server.EntityManager.TryGetBuffer<SpawnGroupBuffer>(spawnRegion, out var spawnGroupBuffer))
+                if (!em.TryGetBuffer<SpawnGroupBuffer>(spawnRegion, out var spawnGroupBuffer))
                     continue;
                 
                 foreach (var group in spawnGroupBuffer)
                 {
-                    if (!Core.Server.EntityManager.TryGetBuffer<SpawnGroup_SpawnTableBuffer>(group.SpawnGroup,
+                    if (!em.TryGetBuffer<SpawnGroup_SpawnTableBuffer>(group.SpawnGroup,
                             out var spawnTableBuffer)) continue;
                     
                     for (int i = 0; i < spawnTableBuffer.Length; i++)
@@ -143,8 +144,7 @@ public class DateTimeSystem_Patch
                 var player = em.GetEntityByEntityIndex(playerIndex);
                 if (Settings.CULL_QUEEN.Value)
                 {
-                    var dayNightCycle = Core.Server.GetExistingSystemManaged<ServerScriptMapper>()._ServerGameManager
-                        .DayNightCycle;
+                    var dayNightCycle = Core.ServerGameManager.DayNightCycle;
                     var now = dayNightCycle.GameDateTimeNow;
                     double dayDurationInSeconds = dayNightCycle.DayDurationInSeconds;
                     double secondsPerInGameHour = dayDurationInSeconds / 24;
@@ -226,7 +226,7 @@ public class DateTimeSystem_Patch
             DoNotDestroy = false
         };
         var deathReason = new DeathReason();
-        DeathUtilities.Kill(Core.Server.EntityManager, spider, dead, deathEvent, deathReason);
+        DeathUtilities.Kill(Core.EntityManager, spider, dead, deathEvent, deathReason);
         // Destroys the entity without giving any drops 
         // DestroyUtility.CreateDestroyEvent(Core.Server.EntityManager, spider, DestroyReason.Default, DestroyDebugReason.None);
     }
